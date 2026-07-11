@@ -1,0 +1,10 @@
+# 의존성 (npm install로 복원)
+node_modules/
+
+# 대용량 원본 데이터 (build_web_data.mjs로 재생성 가능; 앱엔 web_data.json만 필요)
+manseryeok_1900_2050.json
+manseryeok_1900_2050.csv
+
+# 기타
+*.log
+.DS_Store

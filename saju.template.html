@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>사주 조회 — 만세력</title>
+<style>
+  :root{
+    --bg:#f4efe6; --panel:#fffdf8; --ink:#2b2420; --sub:#7a6f63; --line:#e3d9c7;
+    --accent:#8a1c1c; --accent2:#b8860b;
+    --mok:#2e7d4f; --hwa:#c0392b; --to:#b8860b; --geum:#8896a6; --su:#2b3a55;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Malgun Gothic","맑은 고딕",system-ui,sans-serif;line-height:1.5;padding:16px}
+  .wrap{max-width:860px;margin:0 auto}
+  h1{font-size:1.5rem;margin:.2em 0;letter-spacing:.05em}
+  h1 small{color:var(--sub);font-size:.7rem;font-weight:normal;letter-spacing:0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:18px;margin:14px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+  .form{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{font-size:.78rem;color:var(--sub)}
+  input,select{font-size:1rem;padding:8px 10px;border:1px solid var(--line);border-radius:8px;
+    background:#fff;color:var(--ink)}
+  .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;background:#fff;padding:8px 14px;cursor:pointer;font-size:.95rem;color:var(--sub)}
+  .seg button.on{background:var(--accent);color:#fff}
+  .go{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:10px 22px;
+    font-size:1rem;cursor:pointer;letter-spacing:.1em}
+  .go:hover{background:#701414}
+  .chk{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--sub)}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 20px;color:var(--sub);font-size:.9rem;margin:2px 0 10px}
+  .meta b{color:var(--ink)}
+  /* 사주 표 */
+  .pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center}
+  .col h3{margin:0 0 6px;font-size:.85rem;color:var(--sub);font-weight:600}
+  .ten{font-size:.8rem;color:var(--accent);min-height:1.1em}
+  .glyph{font-size:2.4rem;font-weight:700;line-height:1.15;border-radius:10px;padding:6px 0;margin:3px 0}
+  .kor{font-size:.9rem;color:var(--sub)}
+  .el-목{color:var(--mok)} .el-화{color:var(--hwa)} .el-토{color:var(--to)}
+  .el-금{color:var(--geum)} .el-수{color:var(--su)}
+  .bg-목{background:#e8f3ec} .bg-화{background:#fbe9e7} .bg-토{background:#f7f0dd}
+  .bg-금{background:#eef1f5} .bg-수{background:#e9edf4}
+  .us{font-size:.78rem;font-weight:600;color:var(--accent2);margin-top:3px}
+  .glyph.gongmang{outline:2px dashed var(--accent);outline-offset:-4px;opacity:.8}
+  .gm-tag{color:#fff;background:var(--accent);border-radius:4px;padding:0 5px;font-size:.66rem;margin-left:3px;vertical-align:middle}
+  .tool{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 14px;
+    cursor:pointer;font-size:.92rem;color:var(--ink)}
+  .tool:hover{background:#f2ece0}
+  @media print{
+    body{background:#fff;padding:0}
+    .no-print{display:none!important}
+    .card{box-shadow:none;border:1px solid #ccc;break-inside:avoid}
+    h1 small{display:none}
+  }
+  .jjg{margin-top:8px;border-top:1px dashed var(--line);padding-top:5px;
+    font-size:.74rem;color:var(--sub);line-height:1.4}
+  .jjg-h{font-size:.68rem;color:#a99;letter-spacing:.05em;margin-bottom:2px}
+  .jjg-t{color:var(--accent)}
+  .ohaeng{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .ohaeng .o{flex:1;min-width:64px;text-align:center;border:1px solid var(--line);border-radius:8px;padding:6px}
+  .ohaeng .o .n{font-size:1.3rem;font-weight:700}
+  table{border-collapse:collapse;width:100%;font-size:.9rem}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:center}
+  th{background:#faf6ee;color:var(--sub);font-weight:600}
+  .sec-title{font-size:1.05rem;margin:0 0 4px;color:var(--accent);font-weight:700}
+  .detail-sum{font-size:1.05rem;color:var(--accent);font-weight:700;cursor:pointer;list-style:none;user-select:none}
+  .detail-sum::-webkit-details-marker{display:none}
+  details[open] .detail-sum::after{content:' ▴'}
+  .detail h4{margin:14px 0 4px;font-size:.98rem;color:var(--ink);border-left:3px solid var(--accent2);padding-left:8px}
+  .detail p{margin:.2em 0;line-height:1.85;font-size:.95rem}
+  .note{font-size:.8rem;color:var(--sub);margin-top:8px}
+  .err{color:var(--accent);font-weight:600}
+  .dir{display:inline-block;background:var(--accent2);color:#fff;border-radius:6px;padding:1px 8px;font-size:.8rem}
+  /* 일진 달력 */
+  table.iljin{table-layout:fixed}
+  table.iljin td{vertical-align:top;height:54px;padding:3px 2px}
+  table.iljin td.empty{background:#faf8f2}
+  table.iljin td.today{outline:2px solid var(--accent);outline-offset:-2px}
+  table.iljin td.ijcell{cursor:pointer}
+  table.iljin td.ijcell:hover{filter:brightness(.95)}
+  table.iljin td.sel{outline:3px solid var(--accent2);outline-offset:-3px}
+  tr.saeun-row,tr.wolun-row{cursor:pointer}
+  tr.saeun-row:hover td,tr.wolun-row:hover td{background:#f4eede}
+  tr.sel-row td{background:#f5e9c8!important}
+  table.iljin .dnum{font-size:.72rem;color:var(--sub);text-align:left}
+  table.iljin .ijg{font-size:1.05rem;font-weight:700;line-height:1.1}
+  .yun-sel select{font-size:.95rem;padding:6px 8px}
+  /* AI 풀이 */
+  .aiout{margin-top:14px;line-height:1.95;font-size:.96rem}
+  .aiout.streaming{white-space:pre-wrap;font-size:.92rem;color:var(--sub)}
+  .aiout h3{font-size:1.12rem;color:var(--accent);margin:.9em 0 .2em}
+  .aiout h4{font-size:1rem;color:var(--ink);border-left:3px solid var(--accent2);padding-left:8px;margin:1em 0 .3em}
+  .aiout h5{font-size:.95rem;margin:.7em 0 .2em}
+  .aiout:empty{display:none}
+  @media(max-width:560px){.glyph{font-size:1.9rem}.form{gap:8px}
+    table.iljin td{height:44px;font-size:.8rem}table.iljin .ijg{font-size:.85rem}}
+</style>
+<script>/*__HTML2CANVAS__*/</script>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔮 사주 조회 <small>萬歲曆 · 1900~2050 · 한국천문연구원(KASI) 기반</small></h1>
+
+  <div class="card no-print">
+    <div class="form">
+      <div class="field"><label>생년월일 (양력)</label>
+        <input type="date" id="date" min="1900-01-01" max="2050-12-31" value="1990-05-15"></div>
+      <div class="field"><label>태어난 시각</label>
+        <input type="time" id="time" value="14:30"></div>
+      <div class="field"><label>성별 (대운 방향)</label>
+        <div class="seg" id="genderSeg">
+          <button data-g="M" class="on">남</button><button data-g="F">여</button>
+        </div></div>
+    </div>
+    <div class="form" style="margin-top:10px">
+      <div class="field"><label>시간 보정</label>
+        <select id="corrMode">
+          <option value="jintaeyang" selected>진태양시 (출생지 경도)</option>
+          <option value="flat30">표준시 −30분 (간이)</option>
+          <option value="none">보정 안 함</option>
+        </select></div>
+      <div class="field" id="cityField"><label>출생지</label>
+        <select id="citySel"></select></div>
+      <div class="field" id="lonField" style="display:none"><label>경도(°E)</label>
+        <input type="number" id="lonInput" step="0.001" value="126.978" style="width:100px"></div>
+      <div class="field"><label>자시(子時) 처리</label>
+        <select id="yajaMode">
+          <option value="yaja" selected>야자시 (자정 기준)</option>
+          <option value="jeong">정자시 (23시 기준)</option>
+        </select></div>
+      <label class="chk"><input type="checkbox" id="noTime"> 시각 모름(시주 제외)</label>
+      <button class="go" id="go">조회</button>
+      <button class="tool" id="btnPrint">🖨 인쇄</button>
+      <button class="tool" id="btnImg">🖼 이미지 저장</button>
+    </div>
+    <div class="note">※ <b>진태양시</b>: 출생지 경도·균시차·과거 표준시(127.5°E)·서머타임을 자동 반영합니다. <b>자시 처리</b> — 야자시설(자정에 일주 변경) / 정자시설(23시에 일주 변경). 절입일 당일 출생은 시각에 따라 결과가 달라질 수 있습니다.</div>
+  </div>
+
+  <!-- ── 만세력 달력 · 간지 찾기 도구 ── -->
+  <div class="card no-print">
+    <details id="calTool">
+      <summary class="detail-sum">📅 만세력 달력 · 간지(60갑자) 찾기 ▾</summary>
+      <div style="margin-top:12px">
+        <div class="seg" id="calModeSeg" style="margin-bottom:12px">
+          <button data-m="d2g" class="on">날짜 → 간지</button>
+          <button data-m="g2d">간지 → 날짜 (생일찾기)</button>
+        </div>
+        <!-- 날짜 → 간지 -->
+        <div id="calD2G" class="calpane">
+          <div class="form">
+            <div class="field"><label>양력 날짜</label>
+              <input type="date" id="calDate" min="1900-01-01" max="2050-12-31" value="1990-05-15"></div>
+            <button class="go" id="calGoD2G">조회</button>
+          </div>
+          <div id="calD2GOut"></div>
+        </div>
+        <!-- 간지 → 날짜 -->
+        <div id="calG2D" class="calpane" style="display:none">
+          <div class="form">
+            <div class="field"><label>일주 (60갑자)</label>
+              <select id="calGanji"></select></div>
+            <div class="field"><label>시작 연도</label>
+              <input type="number" id="calFromY" min="1900" max="2050" value="1990" style="width:90px"></div>
+            <div class="field"><label>끝 연도</label>
+              <input type="number" id="calToY" min="1900" max="2050" value="2005" style="width:90px"></div>
+            <button class="go" id="calGoG2D">검색</button>
+          </div>
+          <div id="calG2DOut"></div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <div id="result"></div>
+</div>
+
+<script>
+const WEB_DATA = /*__WEB_DATA__*/ null /*__END__*/;
+
+const GAN=['갑','을','병','정','무','기','경','신','임','계'];
+const GAN_H=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+const JI=['자','축','인','묘','진','사','오','미','신','유','술','해'];
+const JI_H=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+// 오행 인덱스: 목0 화1 토2 금3 수4
+const GAN_EL=[0,0,1,1,2,2,3,3,4,4];         // 갑을목 병정화 무기토 경신금 임계수
+const JI_EL =[4,2,0,0,2,1,1,2,3,3,2,4];      // 자수 축토 인목 묘목 진토 사화 오화 미토 신금 유금 술토 해수
+const EL_NAME=['목','화','토','금','수'];
+const EL_HAN=['木','火','土','金','水'];
+const ANIMAL=['쥐','소','호랑이','토끼','용','뱀','말','양','원숭이','닭','개','돼지'];
+// 지지 정기(본기) 천간 인덱스 — 지지 십성 계산용
+const JI_MAIN_GAN=[9,5,0,1,4,2,3,5,6,7,4,8]; // 자癸 축己 인甲 묘乙 진戊 사丙 오丁 미己 신庚 유辛 술戊 해壬
+// 지장간(支藏干): 지지 index -> [여기,(중기),정기] 천간 index (연해자평 표준)
+const JIJANGGAN=[
+  [8,9],    // 자: 임 계
+  [9,7,5],  // 축: 계 신 기
+  [4,2,0],  // 인: 무 병 갑
+  [0,1],    // 묘: 갑 을
+  [1,9,4],  // 진: 을 계 무
+  [4,6,2],  // 사: 무 경 병
+  [2,5,3],  // 오: 병 기 정
+  [3,1,5],  // 미: 정 을 기
+  [4,8,6],  // 신: 무 임 경
+  [6,7],    // 유: 경 신
+  [7,3,4],  // 술: 신 정 무
+  [4,0,8],  // 해: 무 갑 임
+];
+// ── 신살(神殺) 데이터 ──
+// 천을귀인: 일간 -> 지지 배열 (甲戊庚 축미, 乙己 자신, 丙丁 유해, 辛 인오, 壬癸 묘사)
+const CHEONEUL=[[1,7],[0,8],[9,11],[9,11],[1,7],[0,8],[1,7],[2,6],[3,5],[3,5]];
+// 문창귀인: 일간 -> 지지
+const MUNCHANG=[5,6,8,9,8,9,11,0,2,3];
+// 양인: 일간(양간만) -> 지지, 음간 null
+const YANGIN=[3,null,6,null,6,null,9,null,0,null];
+// 삼합 그룹 -> 역마/도화/화개 지지
+const SAMHAP=[
+  {s:[8,0,4],역마:2,도화:9,화개:4},   // 신자진(수국)
+  {s:[2,6,10],역마:8,도화:3,화개:10}, // 인오술(화국)
+  {s:[5,9,1],역마:11,도화:6,화개:1},  // 사유축(금국)
+  {s:[11,3,7],역마:5,도화:0,화개:7},  // 해묘미(목국)
+];
+const groupOf=(ji)=>SAMHAP.find(g=>g.s.includes(ji));
+// 공망: 일주 id -> 두 지지
+function gongmang(pid){const sj=(pid-(pid%10))%12;return [(sj+10)%12,(sj+11)%12];}
+// ── 추가 신살 데이터 ──
+// 천덕귀인: 월지 index -> [type('gan'|'ji'), idx]
+const CHEONDEOK=[['ji',5],['gan',6],['gan',3],['ji',8],['gan',8],['gan',7],['ji',11],['gan',0],['gan',9],['ji',2],['gan',2],['gan',1]];
+// 월덕귀인: 월지 삼합그룹(SAMHAP index) -> 천간  (신자진→임, 인오술→병, 사유축→경, 해묘미→갑)
+const WOLDEOK_STEM=[8,2,6,0];
+// 금여: 일간 -> 지지
+const GEUMYEO=[4,5,7,8,7,8,10,11,1,2];
+// 암록: 일간 -> 지지 (건록의 육합)
+const AMLOK=[11,10,8,7,8,7,5,4,2,1];
+// 홍염살: 일간 -> 지지
+const HONGYEOM=[6,6,2,7,4,4,10,9,0,8];
+// 백호대살 · 괴강살 (간지 자체)
+const BAEKHO_SET=new Set(['갑진','을미','병술','정축','무진','임술','계축']);
+const GWAEGANG_SET=new Set(['경진','경술','임진','무술']);
+// 원진살 · 귀문관살 (지지쌍)
+const WONJIN_SET=new Set(['0-7','1-6','2-9','3-8','4-11','5-10']);
+const GWIMUN_SET=new Set(['0-9','1-6','2-7','3-8','4-11','5-10']);
+const _k2s=(a,b)=>a<b?a+'-'+b:b+'-'+a;
+// ── 십이운성(十二運星) ──
+const UNSEONG_NAMES=['장생','목욕','관대','건록','제왕','쇠','병','사','묘','절','태','양'];
+// 일간 -> 장생지(지지 index). 양간 순행, 음간 역행.
+const JANGSAENG=[11,6,2,9,2,9,5,0,8,3]; // 갑亥 을午 병寅 정酉 무寅 기酉 경巳 신子 임申 계卯
+function unseong(dayStem,jiIdx){
+  const birth=JANGSAENG[dayStem], yang=(dayStem%2)===0;
+  const stage=yang?((jiIdx-birth+12)%12):((birth-jiIdx+12)%12);
+  return UNSEONG_NAMES[stage];
+}
+// ── 십이신살(十二神殺) : 년지 삼합 기준 ──
+const SINSAL12_NAMES=['겁살','재살','천살','지살','년살','월살','망신','장성','반안','역마','육해','화개'];
+// 각 천간 성향(요약문용)
+const GAN_TRAIT=['곧고 진취적이며 리더십이 있는','유연하고 섬세하며 배려심 있는','밝고 열정적이며 표현력이 풍부한',
+  '따뜻하고 예민하며 집중력 있는','듬직하고 포용력이 크며 신뢰감 있는','온화하고 실속 있으며 현실적인',
+  '강직하고 결단력 있으며 의리 있는','예리하고 섬세하며 완벽을 추구하는','지혜롭고 융통성 있으며 포용력 있는',
+  '총명하고 감성적이며 상상력이 풍부한'];
+// ── 상세 해설용 텍스트 ──
+const DAYSTEM_DETAIL=[
+  '큰 나무(甲木)처럼 곧고 위로 뻗는 기상을 지녔습니다. 리더십과 추진력이 강하고 명예를 중시하나, 융통성이 부족해 고집으로 비칠 수 있습니다.',
+  '화초·덩굴(乙木)처럼 유연하고 생활력이 강합니다. 적응력과 섬세함, 실리 감각이 뛰어나지만 때로 의존적이거나 우유부단할 수 있습니다.',
+  '태양(丙火)처럼 밝고 정열적이며 표현이 시원합니다. 솔직하고 리더 기질이 있으나 감정 기복과 성급함을 다스릴 필요가 있습니다.',
+  '촛불·별빛(丁火)처럼 따뜻하고 섬세합니다. 배려심과 집중력, 예술적 감각이 뛰어나지만 예민하고 속을 태우는 경향이 있습니다.',
+  '큰 산·대지(戊土)처럼 듬직하고 포용력이 큽니다. 신뢰감 있고 중재에 능하며 끈기가 있으나, 고집스럽고 변화를 꺼릴 수 있습니다.',
+  '정원의 흙(己土)처럼 온화하고 실속 있습니다. 자상하고 현실적이며 수용력이 좋으나, 걱정이 많거나 우유부단할 수 있습니다.',
+  '무쇠·원석(庚金)처럼 강직하고 결단력이 있습니다. 의리와 추진력, 개혁성이 강하나 지나치면 냉정하거나 거칠어 보일 수 있습니다.',
+  '보석·칼날(辛金)처럼 예리하고 세련됐습니다. 섬세하고 완벽을 추구하며 자존심이 높으나, 예민하고 상처를 잘 받을 수 있습니다.',
+  '큰 강·바다(壬水)처럼 지혜롭고 포용력이 큽니다. 생각이 깊고 융통성·활동성이 있으나 변덕이나 산만함을 주의해야 합니다.',
+  '이슬·시냇물(癸水)처럼 총명하고 감성적입니다. 상상력과 순수함, 적응력이 있으나 소극적이거나 변덕스러울 수 있습니다.'];
+const CAT_OF={비견:'비겁',겁재:'비겁',식신:'식상',상관:'식상',편재:'재성',정재:'재성',편관:'관성',정관:'관성',편인:'인성',정인:'인성'};
+const CAT_MANY={
+  비겁:'비겁(比劫)이 강해 자기 주관과 독립심이 뚜렷하고 경쟁심이 있습니다. 동료·형제 인연이 많으나 협력과 재물 관리에 신경 쓰면 좋습니다.',
+  식상:'식상(食傷)이 강해 표현력·창의력·활동성이 풍부합니다. 재능을 살리기 좋으나 구설과 과욕을 주의하세요.',
+  재성:'재성(財星)이 강해 현실 감각과 재물·활동 욕구가 큽니다. 실행력이 좋으나 일을 벌이는 것과 건강 관리에 유의하세요.',
+  관성:'관성(官星)이 강해 책임감·명예욕·조직 적응력이 큽니다. 자기 관리에 강하나 스트레스와 압박 조절이 필요합니다.',
+  인성:'인성(印星)이 강해 학문·수용력·사색이 깊습니다. 배움과 보호를 받으나 결단·실행이 늦어질 수 있습니다.'};
+const CAT_FEW={
+  비겁:'비겁이 약해 자기 주장·추진력을 의식적으로 키우면 좋습니다.',
+  식상:'식상이 약해 표현·활동의 기회를 늘리면 도움이 됩니다.',
+  재성:'재성이 약해 현실 감각과 재물 관리 훈련이 도움이 됩니다.',
+  관성:'관성이 약해 규율·목표 설정으로 안정감을 더하면 좋습니다.',
+  인성:'인성이 약해 배움과 휴식, 조력자를 곁에 두면 좋습니다.'};
+const OHAENG_LACK_TIP=['청록색·동쪽 방향·성장 관련 활동','붉은색·남쪽 방향·활동적 표현','노란색·중앙·안정된 환경','흰색·서쪽 방향·정리와 결단 습관','검정/남색·북쪽 방향·학습과 유연함'];
+const SINSAL_DETAIL={
+  천을귀인:'가장 큰 길신으로, 어려울 때 귀인의 도움을 받고 위기를 넘기는 힘이 있습니다.',
+  문창귀인:'학문·문서·시험에 강하고 총명하여 공부·연구·자격에 유리합니다.',
+  양인:'기세가 매우 강한 살로, 과감함과 추진력을 주지만 극단·사고·다툼을 주의해야 합니다.',
+  역마:'이동·변화·해외·활동을 상징합니다. 무역·영업·여행 등 움직이는 일에 잘 맞습니다.',
+  도화:'매력과 인기, 예술적 끼를 뜻합니다. 인간관계가 풍부하나 이성 문제는 신중해야 합니다.',
+  화개:'예술·종교·철학·고독을 상징합니다. 깊이 있는 재능이 있으나 고립감을 느낄 수 있습니다.',
+  천덕귀인:'하늘의 덕으로 흉을 길로 바꾸고 재난을 막아주는 큰 길신입니다.',
+  월덕귀인:'달의 덕으로 심성이 온화하고 주변의 도움과 복이 따릅니다.',
+  천의성:'의약·치유와 인연이 깊어 의료·상담·활인(活人)업에 유리합니다.',
+  금여:'유순하고 온화하며 배우자 복과 뜻밖의 복록이 따르는 길성입니다.',
+  암록:'드러나지 않는 복과 귀인의 조력이 있어 위기에 도움을 얻습니다.',
+  홍염살:'매력과 끼가 넘쳐 인기가 있으나 이성 관계의 구설을 주의해야 합니다.',
+  백호대살:'피를 보는 강한 살로 사고·수술·혈광을 조심해야 하나, 강한 추진력으로도 봅니다.',
+  괴강살:'극단적으로 강한 기운의 살로 총명·리더십이 크나 고집·기복을 주의합니다.',
+  원진살:'까닭 없는 미움·원망의 살로 가까운 사이의 애증과 불화를 주의합니다.',
+  귀문관살:'예민함과 직관이 매우 발달하나 정신적 예민·집착을 다스릴 필요가 있습니다.'};
+const DAEUN_THEME={비견:'경쟁·독립·동료',겁재:'경쟁·독립·동료',식신:'표현·재능·여유',상관:'표현·재능·변화',
+  편재:'재물·활동·현실',정재:'재물·안정·현실',편관:'도전·변화·책임',정관:'명예·직장·안정',
+  편인:'학문·준비·재충전',정인:'학문·수용·안정'};
+// 궁위별 인생 영역
+const PALACE_INFO={
+  년:['조상·부모궁','초년기 0~15세','뿌리·가문·유년'],
+  월:['부모·형제궁','청년기 16~30세','직업·사회의 터전'],
+  일:['나·배우자궁','중년기 31~45세','자신과 배우자'],
+  시:['자녀·부하궁','말년기 46세~','결실·자녀·노후']};
+const CAT_PHRASE={비겁:'자립·경쟁',식상:'표현·활동',재성:'재물·현실',관성:'명예·책임',인성:'학문·보호'};
+// 배우자운(일지 십성별)
+const SPOUSE_TG={
+  비견:'배우자와 대등하고 독립적인 관계로, 서로의 영역을 존중할 때 조화롭습니다.',
+  겁재:'배우자와 경쟁적이 되기 쉬우니 양보와 배려가 필요합니다.',
+  식신:'배우자에게 다정하고 헌신적이며 가정이 화목한 편입니다.',
+  상관:'배우자에게 표현이 풍부하나 간섭·잔소리는 줄이는 것이 좋습니다.',
+  편재:'활동적이고 현실 감각 있는 배우자 인연이며 가정 경제에 밝습니다.',
+  정재:'알뜰하고 성실한 배우자와 안정적인 가정을 이루는 편입니다.',
+  편관:'강하고 개성 있는 배우자 인연으로, 존중과 신뢰가 관계의 열쇠입니다.',
+  정관:'듬직하고 반듯하며 책임감 있는 배우자 인연이 있습니다.',
+  편인:'정신적 교류를 중시하며 배우자의 보살핌을 받기도 합니다.',
+  정인:'배우자에게 헌신적 보살핌과 정서적 안정을 얻는 편입니다.'};
+// 직업운(십성 계열 / 오행)
+const CAT_JOB={비겁:'전문직·프리랜서·독립사업·동업',식상:'기술·예술·교육·창작·요식·서비스',
+  재성:'사업·금융·유통·영업·부동산',관성:'공직·대기업·법조·군경·관리직',인성:'학문·연구·교육·의료·행정·자격'};
+const EL_JOB=['교육·출판·의류·기획·목재','전자·방송·요식·미용·예술','부동산·건축·농업·중개·행정',
+  '금융·기계·법률·의료·군경','무역·유통·수산·연구·IT'];
+// 건강운(오행-오장)
+const OHAENG_ORGAN=['간·담(눈·근육·신경)','심장·소장(혈액·정신)','비장·위(소화기)','폐·대장(기관지·피부)','신장·방광(뼈·생식기·귀)'];
+
+const hangulPillar=(id)=>GAN[id%10]+JI[id%12];
+const hanjaPillar =(id)=>GAN_H[id%10]+JI_H[id%12];
+
+// 그레고리 -> JDN
+function toJDN(y,m,d){const a=Math.floor((14-m)/12);const yy=y+4800-a;const mm=m+12*a-3;
+  return d+Math.floor((153*mm+2)/5)+365*yy+Math.floor(yy/4)-Math.floor(yy/100)+Math.floor(yy/400)-32045;}
+
+// 변경점 이진탐색 (date문자열 <= 기준)
+function lookupChange(changes,dateStr){let lo=0,hi=changes.length-1,ans=changes[0][1];
+  while(lo<=hi){const mid=(lo+hi)>>1;if(changes[mid][0]<=dateStr){ans=changes[mid][1];lo=mid+1;}else hi=mid-1;}return ans;}
+
+// 음력 계산: 월 시작점 배열에서 해당 월을 찾아 일수 차로 음력 일 계산
+function lookupLunar(dateStr){
+  const LM=WEB_DATA.lunarMonths;let lo=0,hi=LM.length-1,idx=0;
+  while(lo<=hi){const mid=(lo+hi)>>1;if(LM[mid][0]<=dateStr){idx=mid;lo=mid+1;}else hi=mid-1;}
+  const [sd,ly,lm,leap]=LM[idx];const[a,b,c]=sd.split('-').map(Number);const[d,e,f]=dateStr.split('-').map(Number);
+  const day=(toJDN(d,e,f)-toJDN(a,b,c))+1;
+  return {year:ly,month:lm,day,leap:!!leap};
+}
+
+// 십성: 일간(stemIdx) 기준 대상 천간(tIdx)의 십성
+function tenGod(dayStem,tStem){
+  const de=GAN_EL[dayStem], te=GAN_EL[tStem];
+  const same=(dayStem%2)===(tStem%2); // 음양 동일
+  const rel=(te-de+5)%5;
+  if(rel===0) return same?'비견':'겁재';
+  if(rel===1) return same?'식신':'상관';   // 내가 생
+  if(rel===2) return same?'편재':'정재';   // 내가 극
+  if(rel===3) return same?'편관':'정관';   // 나를 극
+  return same?'편인':'정인';               // 나를 생
+}
+// 지지의 십성 = 지지 정기천간 기준
+function tenGodJi(dayStem,jiIdx){return tenGod(dayStem,JI_MAIN_GAN[jiIdx]);}
+// 지장간 HTML (여기/중기/정기 + 각 십성)
+function jijangganHtml(dayStem,jiIdx){
+  const arr=JIJANGGAN[jiIdx];
+  const names=arr.length===3?['여기','중기','정기']:['여기','정기'];
+  const items=arr.map((s,i)=>{const e=EL_NAME[GAN_EL[s]];
+    return '<div title="'+names[i]+'"><span class="el-'+e+'" style="font-weight:700">'+GAN_H[s]+'</span> '
+      +'<span class="jjg-t">'+tenGod(dayStem,s)+'</span></div>';}).join('');
+  return '<div class="jjg"><div class="jjg-h">지장간</div>'+items+'</div>';
+}
+
+function el(id,part){ // part 'gan'|'ji'
+  return part==='gan'?GAN_EL[id%10]:JI_EL[id%12];
+}
+
+// ══ 시간 보정 (진태양시 / 서머타임 / 과거 표준시 / 야자시) ══
+// 주요 도시 경도(°E)
+const CITIES=[
+  ['서울',126.978],['인천',126.705],['수원',127.029],['춘천',127.734],['강릉',128.896],
+  ['원주',127.920],['대전',127.385],['세종',127.289],['청주',127.489],['천안',127.114],
+  ['전주',127.148],['광주',126.851],['목포',126.392],['여수',127.662],['순천',127.487],
+  ['대구',128.601],['안동',128.729],['포항',129.365],['부산',129.075],['울산',129.311],
+  ['창원',128.682],['진주',128.104],['제주',126.531],['개성',126.548],['평양',125.754],
+  ['원산',127.443],['함흥',127.536],['청진',129.775],['신의주',124.398]
+];
+// 한국 서머타임(일광절약) 시행 기간 — 이 기간엔 시계가 +1h이므로 표준시로 −60분
+const DST=[
+  ['1948-06-01','1948-09-13'],['1949-04-03','1949-09-11'],['1950-04-01','1950-09-10'],
+  ['1951-05-06','1951-09-09'],['1955-05-05','1955-09-09'],['1956-05-20','1956-09-30'],
+  ['1957-05-05','1957-09-22'],['1958-05-04','1958-09-21'],['1959-05-03','1959-09-20'],
+  ['1960-05-01','1960-09-18'],['1987-05-10','1987-10-11'],['1988-05-08','1988-10-09']
+];
+const inDST=(ds)=>DST.some(([a,b])=>ds>=a&&ds<=b);
+// 표준자오선이 127.5°E(UTC+8:30)였던 기간 (그 외는 135°E)
+const inStd1275=(ds)=>(ds>='1908-04-01'&&ds<='1911-12-31')||(ds>='1954-03-21'&&ds<='1961-08-09');
+function dayOfYear(ds){const[Y,M,D]=ds.split('-').map(Number);return toJDN(Y,M,D)-toJDN(Y,1,1)+1;}
+// 균시차(Equation of Time), 분
+function equationOfTime(ds){const N=dayOfYear(ds);const B=2*Math.PI*(N-81)/364;
+  return 9.87*Math.sin(2*B)-7.53*Math.cos(B)-1.5*Math.sin(B);}
+// 총 보정(분) 및 내역
+function timeCorrection(ds){
+  const mode=document.getElementById('corrMode').value;
+  if(mode==='none')return {mode,corrMin:0};
+  if(mode==='flat30')return {mode,corrMin:-30};
+  const cs=document.getElementById('citySel');
+  let lon;
+  if(cs.value==='직접입력')lon=parseFloat(document.getElementById('lonInput').value)||126.978;
+  else lon=parseFloat(cs.selectedOptions[0].dataset.lon);
+  const std=inStd1275(ds)?127.5:135;
+  const lonCorr=(lon-std)*4;      // 경도차 1도 = 4분
+  const eot=equationOfTime(ds);
+  const dst=inDST(ds)?-60:0;
+  return {mode,corrMin:lonCorr+eot+dst,lon,std,lonCorr,eot,dst,city:cs.value};
+}
+// 시주 (시두법): 시지 branch로부터 시주 id
+function hourPillarFromBranch(dayStem,b){const start=(dayStem%5)*2,st=(start+b)%10;
+  for(let i=0;i<60;i++)if(i%10===st&&i%12===b)return i;return -1;}
+// 보정 내역 표시
+function corrHtml(corr,noTime,effMin,dayShift,effDateStr){
+  if(noTime||corr.mode==='none')return '';
+  if(corr.mode==='flat30')return '<span>보정 <b>표준시 −30분</b></span>';
+  const total=Math.round(corr.corrMin);
+  const eh=Math.floor(effMin/60), em=effMin%60;
+  const parts=['경도 '+(corr.lonCorr>=0?'+':'')+corr.lonCorr.toFixed(0)+'분',
+    '균시차 '+(corr.eot>=0?'+':'')+corr.eot.toFixed(0)+'분'];
+  if(corr.dst)parts.push('서머타임 −60분');
+  if(corr.std===127.5)parts.push('표준시 127.5°E');
+  let s='<span title="'+parts.join(' · ')+'">진태양시 <b>'+(total>=0?'+':'')+total+'분</b> → '+pad2(eh)+':'+pad2(em)+'</span>';
+  if(dayShift!==0)s+='<span style="color:var(--accent)">일주 기준일 <b>'+effDateStr+'</b> (자시 '+(dayShift>0?'익일':'전일')+')</span>';
+  return s;
+}
+
+function fmt(id){return {id,hangul:hangulPillar(id),hanja:hanjaPillar(id)};}
+
+function compute(){
+  const dateStr=document.getElementById('date').value;
+  const timeStr=document.getElementById('time').value||'00:00';
+  const gender=document.querySelector('#genderSeg .on').dataset.g;
+  const noTime=document.getElementById('noTime').checked;
+  const yaja=document.getElementById('yajaMode').value==='yaja';
+  const R=document.getElementById('result');
+
+  if(!dateStr){R.innerHTML='<div class="card err">생년월일을 입력하세요.</div>';return;}
+  if(dateStr<WEB_DATA.minDate||dateStr>WEB_DATA.maxDate){
+    R.innerHTML='<div class="card err">지원 범위(1900-01-01 ~ 2050-12-31)를 벗어났습니다.</div>';return;}
+  const [Y,M,D]=dateStr.split('-').map(Number);
+  const [h,mi]=timeStr.split(':').map(Number);
+  const jdn=toJDN(Y,M,D);
+
+  // 시간 보정 → 진태양 시각 및 자시 날짜 이동
+  const corr=timeCorrection(dateStr);
+  let effJdn=jdn, effDateStr=dateStr, effMin=h*60+mi, dayShift=0;
+  if(!noTime){
+    const rawMin=Math.round(h*60+mi+corr.corrMin);
+    dayShift=yaja?Math.floor(rawMin/1440):Math.floor((rawMin+60)/1440);
+    effMin=((rawMin%1440)+1440)%1440;
+    effJdn=jdn+dayShift;
+    const eg=fromJDN(effJdn); effDateStr=dateStrOf(eg.year,eg.month,eg.day);
+  }
+  const dayId=((effJdn+WEB_DATA.dayPillarOffset)%60+60)%60;
+  const yearId=lookupChange(WEB_DATA.yearChanges,effDateStr);
+  const monId=lookupChange(WEB_DATA.monthChanges,effDateStr);
+  const dayStem=dayId%10;
+  const hb=noTime?null:Math.floor((effMin+60)/120)%12;
+  const hourId=noTime?null:hourPillarFromBranch(dayStem,hb);
+
+  // 기둥 (시 일 월 년) — 시각 미상 시 시주 제외
+  const P={일:fmt(dayId),월:fmt(monId),년:fmt(yearId)};
+  if(hourId!=null)P['시']=fmt(hourId);
+  const order=(hourId!=null)?['시','일','월','년']:['일','월','년'];
+
+  // 렌더
+  let html='';
+  const animal=ANIMAL[yearId%12];
+  const L=lookupLunar(effDateStr);
+  html+='<div class="card">';
+  html+='<div class="meta">'
+    +'<span>양력 <b>'+dateStr+(noTime?' (시각 미상)':' '+timeStr)+'</b></span>'
+    +'<span>음력 <b>'+L.year+'.'+String(L.month).padStart(2,'0')+'.'+String(L.day).padStart(2,'0')+(L.leap?' (윤달)':'')+'</b></span>'
+    +corrHtml(corr,noTime,effMin,dayShift,effDateStr)
+    +'<span>띠 <b>'+animal+'띠</b></span>'
+    +(hb!=null?'<span>시지 <b>'+JI[hb]+'시</b></span>':'')
+    +'<span>일간(나) <b class="el-'+EL_NAME[GAN_EL[dayStem]]+'">'+GAN[dayStem]+' ('+EL_NAME[GAN_EL[dayStem]]+')</b></span>'
+    +'</div>';
+
+  const gm=gongmang(dayId); // 일주 기준 공망 지지쌍
+  html+='<div class="pillars">';
+  for(const k of order){
+    const p=P[k];
+    const ge=EL_NAME[el(p.id,'gan')], je=EL_NAME[el(p.id,'ji')];
+    const tgGan=(k==='일')?'<span style="color:var(--accent2)">일간</span>':tenGod(dayStem,p.id%10);
+    const tgJi=tenGodJi(dayStem,p.id%12);
+    const isGM=(k!=='일')&&gm.includes(p.id%12); // 일지 제외
+    html+='<div class="col">'
+      +'<h3>'+k+'주</h3>'
+      +'<div class="ten">'+tgGan+'</div>'
+      +'<div class="glyph bg-'+ge+' el-'+ge+'">'+GAN_H[p.id%10]+'</div>'
+      +'<div class="kor">'+GAN[p.id%10]+' · '+ge+'</div>'
+      +'<div class="glyph bg-'+je+' el-'+je+(isGM?' gongmang':'')+'">'+JI_H[p.id%12]+'</div>'
+      +'<div class="kor">'+JI[p.id%12]+' · '+je+(isGM?' <span class="gm-tag">공망</span>':'')+'</div>'
+      +'<div class="ten">'+tgJi+'</div>'
+      +'<div class="us">운성 '+unseong(dayStem,p.id%12)+'</div>'
+      +jijangganHtml(dayStem,p.id%12)
+      +'</div>';
+  }
+  html+='</div>';
+
+  // 오행 분포 집계
+  const cnt=[0,0,0,0,0];
+  for(const k of order){cnt[el(P[k].id,'gan')]++;cnt[el(P[k].id,'ji')]++;}
+  html+='</div>'; // 명식 카드 닫기
+  // ── 오행·십성 차트 + 신강지수 ──
+  html+=renderCharts(P,dayStem,cnt);
+  // ── 격국 · 용신 ──
+  html+=renderYongsin(P,dayStem);
+  // ── 납음오행 · 명궁 ──
+  html+=renderNapeum(P);
+  html+=renderMyeonggung(P,dayStem,hb,yearId%10);
+  // ── 합·충·형·파·해 ──
+  html+=renderRelations(P);
+
+  // ── 신살 ──
+  const ss=renderSinsal(P,order);
+  html+=ss.html;
+  // ── 십이신살 ──
+  html+=renderSinsal12(P,order);
+  // ── 명식 해석 요약 ──
+  const dm=daeunMeta(effDateStr,yearId,monId,gender);
+  html+=renderSummary(dayStem,cnt,ss.names,unseong(dayStem,P['일'].id%12),dm.forward,dm.startAge,animal);
+  // ── 궁위별 해석 ──
+  html+=renderPalace(P,dayStem);
+  // ── 상세 해설 ──
+  html+=renderDetail(P,order,dayStem,cnt,ss.names,dm.forward,dm.startAge,monId,Y,gender);
+  // ── 대운 ──
+  html+=renderDaeun(effDateStr,effJdn,yearId,monId,dayStem,gender);
+  // ── 세운 ──
+  html+=renderSaeun(Y,yearId,dayStem);
+  // ── 월운 · 일진 ──
+  const now0=new Date(), nowY=now0.getFullYear(), nowM=now0.getMonth()+1;
+  html+=renderWolunCard(nowY)+renderIljinCard(nowY,nowM);
+  // ── AI 풀이용 명식 요약 + 카드 ──
+  {
+    const _sin=sinStrength(P,dayStem), _gg=gyeokguk(P,dayStem), _dec=yongsinDecision(_sin.cat,_sin.sinType);
+    const catStr=['비겁','식상','재성','관성','인성'].map(c=>c+_sin.cat[c]).join(' ');
+    const pilStr=['년','월','일','시'].filter(k=>P[k]).map(k=>k+'주 '+hanjaPillar(P[k].id)+'('+hangulPillar(P[k].id)+')').join(', ');
+    window.__sajuAi=[
+      '생년월일시: '+dateStr+(noTime?' (시각 미상)':' '+timeStr)+' · 성별 '+(gender==='M'?'남':'여'),
+      '음력: '+L.year+'.'+String(L.month).padStart(2,'0')+'.'+String(L.day).padStart(2,'0')+(L.leap?' 윤달':'')+' · '+animal+'띠',
+      '사주(년월일시): '+pilStr,
+      '일간(본인): '+GAN_H[dayStem]+' '+GAN[dayStem]+'('+EL_NAME[GAN_EL[dayStem]]+')',
+      '오행 분포: '+EL_NAME.map((n,i)=>n+cnt[i]).join(' '),
+      '십성 분포: '+catStr,
+      '신강지수: '+_sin.sinScore+'/100 ('+_sin.sinType+')',
+      '격국: '+_gg.name+' ('+_gg.note+')',
+      '용신(억부): '+_dec.yong+' / 희신: '+_dec.hui+' / 기신: '+_dec.gi,
+      '주요 신살: '+(ss.names.join(', ')||'뚜렷한 것 없음'),
+      '대운: '+(dm.forward?'순행':'역행')+', '+dm.startAge+'세부터 10년 주기',
+    ].join('\n');
+  }
+  html+=renderAiCard();
+
+  R.innerHTML=html;
+  // 일진 상세 해석용 컨텍스트(일간·일지·용신/기신 오행)
+  {
+    const dec=yongsinDecision(sinStrength(P,dayStem).cat, sinStrength(P,dayStem).sinType);
+    const D=GAN_EL[dayStem], Em={비겁:D,인성:(D+4)%5,식상:(D+1)%5,재성:(D+2)%5,관성:(D+3)%5};
+    const yongEls=new Set(), giEls=new Set();
+    if(dec.yong!=='중화'){ if(Em[dec.yong]!=null)yongEls.add(Em[dec.yong]); if(Em[dec.hui]!=null)yongEls.add(Em[dec.hui]); if(Em[dec.gi]!=null)giEls.add(Em[dec.gi]); }
+    CTX={dayStem, dayBranch:P['일'].id%12, yongEls, giEls};
+  }
+  fillWolun(nowY); fillIljin(nowY,nowM); wireYunControls(); wireAi();
+}
+
+function renderSinsal(P,order){
+  const dayId=P['일'].id, dayStem=dayId%10;
+  const jiOf={}, ganOf={};
+  order.forEach(k=>{jiOf[k]=P[k].id%12; ganOf[k]=P[k].id%10;});
+  const jl={시:'시지',일:'일지',월:'월지',년:'년지'}, gl={시:'시간',일:'일간',월:'월간',년:'년간'}, pl={시:'시주',일:'일주',월:'월주',년:'년주'};
+  const jiLoc=(arr)=>{const s=new Set(arr);return order.filter(k=>s.has(jiOf[k])).map(k=>jl[k]+'('+JI_H[jiOf[k]]+')').join(', ');};
+  const ganLoc=(arr)=>{const s=new Set(arr);return order.filter(k=>s.has(ganOf[k])).map(k=>gl[k]+'('+GAN_H[ganOf[k]]+')').join(', ');};
+  const pairLoc=(chk)=>{const r=[];for(let a=0;a<order.length;a++)for(let b=a+1;b<order.length;b++){
+    const x=jiOf[order[a]],y=jiOf[order[b]];if(chk(x,y))r.push(jl[order[a]]+'·'+jl[order[b]]+'('+JI_H[x]+'·'+JI_H[y]+')');}return r.join(', ');};
+  const pillarLoc=(setc)=>order.filter(k=>setc(hangulPillar(P[k].id))).map(k=>pl[k]+'('+hanjaPillar(P[k].id)+')').join(', ');
+  const mb=jiOf['월'], g=groupOf(jiOf['일']);
+  const rows=[];
+  const push=(name,cat,desc,loc)=>{ if(loc) rows.push({name,cat,desc,loc}); };
+  // ── 길신 ──
+  push('천을귀인','길','天乙貴人 · 최고의 길신, 위기에 귀인', jiLoc(CHEONEUL[dayStem]));
+  const td=CHEONDEOK[mb]; push('천덕귀인','길','天德貴人 · 하늘의 덕, 재난 방지', td[0]==='ji'?jiLoc([td[1]]):ganLoc([td[1]]));
+  push('월덕귀인','길','月德貴人 · 달의 덕, 온화·복록', ganLoc([WOLDEOK_STEM[SAMHAP.findIndex(G=>G.s.includes(mb))]]));
+  push('문창귀인','길','文昌貴人 · 학문·총명·시험', jiLoc([MUNCHANG[dayStem]]));
+  push('천의성','길','天醫星 · 의약·치유·활인업', jiLoc([(mb-1+12)%12]));
+  push('금여','길','金輿 · 배우자복·유순·복록', jiLoc([GEUMYEO[dayStem]]));
+  push('암록','길','暗祿 · 숨은 복, 귀인 조력', jiLoc([AMLOK[dayStem]]));
+  // ── 이동·인기(중립) ──
+  push('역마','중','驛馬 · 이동·변동·해외', jiLoc([g.역마]));
+  push('도화','중','桃花 · 매력·인기·이성', jiLoc([g.도화]));
+  push('화개','중','華蓋 · 예술·종교·고독', jiLoc([g.화개]));
+  // ── 흉살 ──
+  if(YANGIN[dayStem]!=null) push('양인','흉','羊刃 · 강한 기운, 극단 주의', jiLoc([YANGIN[dayStem]]));
+  push('홍염살','흉','紅艶殺 · 매력·끼, 이성 구설', jiLoc([HONGYEOM[dayStem]]));
+  push('백호대살','흉','白虎大殺 · 혈광·사고·수술 주의', pillarLoc(h=>BAEKHO_SET.has(h)));
+  push('괴강살','흉','魁罡殺 · 극강·총명, 고집 주의', pillarLoc(h=>GWAEGANG_SET.has(h)));
+  push('원진살','흉','怨嗔殺 · 까닭없는 미움·불화', pairLoc((x,y)=>WONJIN_SET.has(_k2s(x,y))));
+  push('귀문관살','흉','鬼門關殺 · 예민·직관, 집착 주의', pairLoc((x,y)=>GWIMUN_SET.has(_k2s(x,y))));
+  // ── 공망 (항상 표시) ──
+  const gm=gongmang(dayId);
+  const gmL=order.filter(k=>k!=='일'&&gm.includes(jiOf[k]));
+  const gmLoc=gmL.length?gmL.map(k=>jl[k]+'('+JI_H[jiOf[k]]+')').join(', '):'<span style="color:#bbb">해당 없음</span>';
+  rows.push({name:'공망',cat:'중',desc:'空亡 · 비어있음 ('+JI[gm[0]]+'·'+JI[gm[1]]+')',loc:gmLoc});
+  // 렌더
+  const catStyle={길:'color:var(--mok)',흉:'color:var(--accent)',중:''};
+  const catTag={길:'<span style="font-size:.66rem;color:var(--mok)">길</span>',흉:'<span style="font-size:.66rem;color:var(--accent)">흉</span>',중:'<span style="font-size:.66rem;color:var(--sub)">중</span>'};
+  let body='';
+  for(const r of rows){
+    body+='<tr><td style="font-weight:700;white-space:nowrap;'+catStyle[r.cat]+'">'+catTag[r.cat]+' '+r.name+'</td>'
+      +'<td style="color:var(--sub);font-size:.85rem;text-align:left">'+r.desc+'</td>'
+      +'<td style="font-size:.9rem">'+r.loc+'</td></tr>';
+  }
+  // 삼재 (년지 삼합 기준, 세운 참고)
+  const sjArr=[[2,3,4],[8,9,10],[11,0,1],[5,6,7]][SAMHAP.findIndex(G=>G.s.includes(jiOf['년']))];
+  const samjae=sjArr.map(i=>JI[i]).join('·')+'년';
+  const names=rows.filter(r=>!(r.name==='공망'&&!gmL.length)).map(r=>r.name);
+  const html='<div class="card"><div class="sec-title">신살 (神殺)</div>'
+    +'<table><tr><th>신살</th><th>의미</th><th>위치</th></tr>'+body+'</table>'
+    +'<div class="note">※ <b class="el-목">길</b>=길신 · <b class="el-화">흉</b>=흉살 · 중=중립. 삼재(三災): 이 명조는 <b>'+samjae+'</b>에 듭니다(띠 12년 주기 참고). 신살은 유파에 따라 기준·해석이 다를 수 있는 참고 지표입니다.</div></div>';
+  return {html,names};
+}
+
+// ── 십이신살 (년지 삼합 기준) ──
+function renderSinsal12(P,order){
+  const refJi=P['년'].id%12;
+  const g=groupOf(refJi);
+  const geopsal=(g.도화+8)%12; // 겁살 지지
+  const label={시:'시주',일:'일주',월:'월주',년:'년주'};
+  let cells='';
+  for(const k of order){
+    const ji=P[k].id%12;
+    const name=SINSAL12_NAMES[((ji-geopsal)%12+12)%12];
+    cells+='<td><div style="color:var(--sub);font-size:.8rem">'+label[k]+' ('+JI_H[ji]+')</div>'
+      +'<div style="font-weight:700;margin-top:2px">'+name+'</div></td>';
+  }
+  return '<div class="card"><div class="sec-title">십이신살 (十二神殺)</div>'
+    +'<table><tr>'+cells+'</tr></table>'
+    +'<div class="note">※ 년지(年支) 삼합 기준. 겁살·재살·천살·지살·년살·월살·망신·장성·반안·역마·육해·화개.</div></div>';
+}
+
+// ── 궁위별 해석 ──
+function renderPalace(P,dayStem){
+  let rows='';
+  for(const k of ['년','월','일','시'].filter(k=>P[k])){
+    const ji=P[k].id%12, jiTen=tenGodJi(dayStem,ji), ph=CAT_PHRASE[CAT_OF[jiTen]];
+    const inf=PALACE_INFO[k];
+    rows+='<tr><td style="font-weight:700">'+k+'주</td>'
+      +'<td style="text-align:left">'+inf[0]+'<div style="color:var(--sub);font-size:.8rem">'+inf[1]+' · '+inf[2]+'</div></td>'
+      +'<td>'+JI_H[ji]+' <span style="color:var(--accent)">'+jiTen+'</span>'
+      +'<div style="color:var(--sub);font-size:.8rem">'+ph+'의 기운</div></td></tr>';
+  }
+  return '<div class="card"><div class="sec-title">궁위별 해석 (宮位)</div>'
+    +'<table><tr><th>기둥</th><th>궁위 · 시기</th><th>기운</th></tr>'+rows+'</table>'
+    +'<div class="note">※ 각 기둥이 상징하는 인생 영역과 시기입니다. 일지는 배우자궁, 월지(월령)는 사회·직업의 터전으로 특히 중시합니다.</div></div>';
+}
+
+// ── 상세 해설 (접이식) ──
+function renderDetail(P,order,dayStem,cnt,sinsalNames,forward,startAge,monId,birthY,gender){
+  const el=EL_NAME[GAN_EL[dayStem]];
+  // 십성 카테고리 집계 (일간 제외, 천간3 + 지지정기4)
+  const cat={비겁:0,식상:0,재성:0,관성:0,인성:0};
+  for(const k of order){
+    if(k!=='일')cat[CAT_OF[tenGod(dayStem,P[k].id%10)]]++;
+    cat[CAT_OF[tenGodJi(dayStem,P[k].id%12)]]++;
+  }
+  const catEntries=Object.entries(cat);
+  const maxCat=catEntries.reduce((a,b)=>b[1]>a[1]?b:a)[0];
+  const minCat=catEntries.reduce((a,b)=>b[1]<a[1]?b:a)[0];
+  // 신강/신약 (간이): 비겁+인성
+  const naepyeon=cat.비겁+cat.인성;
+  const sinType=naepyeon>=4?'신강':'신약';
+  const sinDesc=sinType==='신강'
+    ?'일간의 기운이 강한 편(<b>신강</b>)입니다. 자기 주도적이고 추진력이 있으니, 기운을 덜어내는 식상·재성·관성을 잘 활용하면 좋습니다.'
+    :'일간의 기운이 약한 편(<b>신약</b>)입니다. 협력과 배움으로 힘을 보강하고, 무리한 확장보다 내실을 다지는 것이 유리합니다.';
+  // 오행 균형
+  const strong=EL_NAME[cnt.indexOf(Math.max(...cnt))];
+  const lack=[];for(let i=0;i<5;i++)if(cnt[i]===0)lack.push(i);
+  // 현재 대운
+  const now=new Date().getFullYear(), age=now-birthY;
+  let curLabel, curPillar;
+  if(age<startAge){curPillar=monId;curLabel='대운 시작 전(초년기)';}
+  else{const idx=Math.floor((age-startAge)/10);const step=forward?(idx+1):-(idx+1);
+    curPillar=((monId+step)%60+60)%60;const a0=startAge+idx*10;curLabel=a0+'~'+(a0+9)+'세 대운';}
+  const curTen=tenGod(dayStem,curPillar%10);
+
+  let h='';
+  h+='<h4>1. 일간(日主) — 나의 본질</h4><p>'+DAYSTEM_DETAIL[dayStem]+'</p>';
+  h+='<h4>2. 신강·신약</h4><p>'+sinDesc+' <span style="color:var(--sub)">(비겁 '+cat.비겁+' + 인성 '+cat.인성+' = '+naepyeon+'/7, 간이 판단)</span></p>';
+  h+='<h4>3. 오행의 균형</h4><p><b>'+strong+'</b> 기운이 가장 강합니다. ';
+  if(lack.length){h+='부족한 <b>'+lack.map(i=>EL_NAME[i]).join('·')+'</b> 기운은 '
+    +lack.map(i=>OHAENG_LACK_TIP[i]).join(' / ')+' 등으로 보완하면 좋다고 봅니다.';}
+  else{h+='다섯 기운이 비교적 고르게 갖추어져 균형이 잡힌 편입니다.';}
+  h+='</p>';
+  h+='<h4>4. 십성으로 본 성향</h4><p>'+CAT_MANY[maxCat]+' '+(cat[minCat]===0?CAT_FEW[minCat]:'')+'</p>';
+  const sd=sinsalNames.filter(n=>SINSAL_DETAIL[n]);
+  h+='<h4>5. 신살 풀이</h4>';
+  if(sd.length){h+='<ul style="margin:.2em 0 .2em 1.1em;padding:0">'
+    +sd.map(n=>'<li style="margin:.25em 0"><b>'+n+'</b> — '+SINSAL_DETAIL[n]+'</li>').join('')+'</ul>';}
+  else{h+='<p>사주에 뚜렷하게 잡히는 주요 신살은 없습니다.</p>';}
+  h+='<h4>6. 대운의 흐름</h4><p>대운은 <b>'+(forward?'순행':'역행')+'</b>하며 '+startAge+'세부터 10년 단위로 바뀝니다. '
+    +'현재는 <b>'+curLabel+'</b>('+hangulPillar(curPillar)+')으로, <b>'+curTen+'</b>의 기운이 작용해 <b>'
+    +(DAEUN_THEME[curTen]||'')+'</b>과 관련된 흐름의 시기로 봅니다.</p>';
+
+  // 7. 배우자운
+  const spJi=P['일'].id%12, spTen=tenGodJi(dayStem,spJi);
+  let sp='배우자궁인 일지는 <b>'+JI[spJi]+JI_H[spJi]+'('+EL_NAME[JI_EL[spJi]]+')</b>이며, 십성으로 <b>'+spTen+'</b>에 해당합니다. '+SPOUSE_TG[spTen]+' ';
+  if(gender==='M'){const n=cat.재성;sp+='남성에게 배우자를 뜻하는 <b>재성</b>이 '+n+'개로, '
+    +(n===0?'뚜렷하지 않아 인연을 적극적으로 찾는 노력이 도움이 됩니다.':(n>=3?'다소 많아 이성 인연이 풍부하나 선택과 집중이 중요합니다.':'적절한 편입니다.'));}
+  else{const n=cat.관성;sp+='여성에게 배우자를 뜻하는 <b>관성</b>이 '+n+'개로, '
+    +(n===0?'뚜렷하지 않아 인연을 적극적으로 찾는 노력이 도움이 됩니다.':(n>=3?'다소 많아 인연이 풍부하나 선택과 집중이 중요합니다.':'적절한 편입니다.'));}
+  h+='<h4>7. 배우자운</h4><p>'+sp+'</p>';
+  // 8. 직업운
+  const sEl=cnt.indexOf(Math.max(...cnt));
+  h+='<h4>8. 직업운</h4><p>십성으로는 <b>'+CAT_JOB[maxCat]+'</b>, 오행으로는 <b>'+EL_JOB[sEl]+'</b> 계열이 잘 맞는 편입니다. '
+    +'관성이 '+(cat.관성>=2?'있어 조직·직장 생활에 적응력이 좋은 편입니다.':'약한 편이라 자유업·전문직·사업이 어울릴 수 있습니다.')+'</p>';
+  // 9. 건강운
+  let hl='오행 중 <b>'+EL_NAME[sEl]+'</b>이 강하니 <b>'+OHAENG_ORGAN[sEl]+'</b>의 과항(過亢)을 살피고, ';
+  if(lack.length)hl+='부족한 <b>'+lack.map(i=>EL_NAME[i]).join('·')+'</b>에 해당하는 <b>'+lack.map(i=>OHAENG_ORGAN[i]).join(' / ')+'</b>의 허약을 함께 보완하면 좋습니다.';
+  else hl+='다섯 기운이 고른 편이니 규칙적 생활로 균형을 유지하면 좋습니다.';
+  h+='<h4>9. 건강운</h4><p>'+hl+'</p>';
+
+  return '<div class="card"><details><summary class="detail-sum">📖 상세 해설 펼치기 ▾</summary>'
+    +'<div class="detail">'+h+'</div>'
+    +'<div class="note">※ 명리학 상식에 기반한 참고용 해설이며, 개인의 노력과 환경에 따라 얼마든지 달라집니다. 정밀한 통변은 전문가 상담을 권합니다.</div>'
+    +'</details></div>';
+}
+
+// 대운 방향·대운수만 계산(요약문 공유용)
+function daeunMeta(dateStr,yearId,monId,gender){
+  const yin=(yearId%10)%2;
+  const forward=(gender==='M'&&yin===0)||(gender==='F'&&yin===1);
+  const mc=WEB_DATA.monthChanges;let nextB=null,prevB=null;
+  for(let i=0;i<mc.length;i++){if(mc[i][0]>dateStr){nextB=mc[i][0];prevB=mc[i-1]?mc[i-1][0]:mc[0][0];break;}}
+  if(!nextB)prevB=mc[mc.length-1][0];
+  const days=forward?(nextB?daysBetween(dateStr,nextB):3):(prevB?daysBetween(prevB,dateStr):3);
+  return {forward,startAge:Math.max(1,Math.round(days/3))};
+}
+
+// ── 명식 해석 요약문 ──
+function renderSummary(dayStem,cnt,sinsalNames,jiUnseong,forward,startAge,animal){
+  const el=EL_NAME[GAN_EL[dayStem]];
+  const maxN=Math.max(...cnt);
+  const strong=EL_NAME[cnt.indexOf(maxN)];
+  const lacking=[];for(let i=0;i<5;i++)if(cnt[i]===0)lacking.push(EL_NAME[i]);
+  const s=[];
+  s.push('일간이 <b class="el-'+el+'">'+GAN[dayStem]+GAN_H[dayStem]+'('+el+')</b>인 '+animal+'띠로, '+GAN_TRAIT[dayStem]+' 기질을 지녔습니다.');
+  s.push('오행은 <b>'+strong+'</b> 기운이 가장 왕성하고'+(lacking.length?', <b>'+lacking.join('·')+'</b> 기운이 부족합니다.':' 비교적 고르게 분포합니다.'));
+  const good=sinsalNames.filter(n=>['천을귀인','천덕귀인','월덕귀인','문창귀인'].includes(n));
+  if(good.length)s.push('사주에 <b class="el-목">'+good.join('·')+'</b>이 있어 귀인의 도움과 복덕을 기대할 수 있습니다.');
+  if(sinsalNames.includes('도화'))s.push('<b>도화</b>가 있어 매력과 인기가 있으나 이성 관계는 신중함이 필요합니다.');
+  if(sinsalNames.includes('역마'))s.push('<b>역마</b>가 있어 활동적이며 이동·변화가 잦은 삶이 예상됩니다.');
+  if(sinsalNames.includes('화개'))s.push('<b>화개</b>가 있어 예술·종교·학문에 인연이 깊습니다.');
+  if(sinsalNames.includes('양인'))s.push('<b class="el-화">양인</b>이 있어 기세가 강하니 절제와 균형이 중요합니다.');
+  s.push('일지의 기운은 십이운성 <b class="el-토">'+jiUnseong+'</b>에 해당하며, 대운은 <b>'+(forward?'순행':'역행')+'</b>하여 <b>'+startAge+'세</b>부터 흐릅니다.');
+  return '<div class="card"><div class="sec-title">명식 해석 요약</div>'
+    +'<p style="line-height:1.95;margin:.3em 0;font-size:.98rem">'+s.join(' ')+'</p>'
+    +'<div class="note">※ 오행·신살에 근거한 간이 해석입니다. 정밀한 통변은 전문가 상담을 권합니다.</div></div>';
+}
+
+// ══ 오행·십성 분포 차트 + 신강지수 게이지 ══
+function chartBar(label,val,max,color){
+  const pct=max?Math.round(val/max*100):0;
+  return '<div style="display:flex;align-items:center;gap:8px;margin:5px 0">'
+    +'<div style="width:56px;font-size:.85rem;color:var(--sub);text-align:right">'+label+'</div>'
+    +'<div style="flex:1;background:#ece4d3;border-radius:6px;height:18px;overflow:hidden">'
+      +'<div style="width:'+pct+'%;height:100%;background:'+color+';transition:width .3s"></div></div>'
+    +'<div style="width:26px;font-size:.85rem;font-weight:600">'+val+'</div></div>';
+}
+function sinGauge(v){
+  return '<div style="margin:6px 0 2px">'
+    +'<div style="position:relative;height:26px;border-radius:6px;overflow:hidden;'
+      +'background:linear-gradient(90deg,#2b3a55 0%,#2b3a55 45%,#b8860b 45%,#b8860b 55%,#8a1c1c 55%,#8a1c1c 100%)">'
+    +'<div style="position:absolute;left:'+v+'%;top:0;transform:translateX(-50%);height:26px;width:3px;background:#fff;box-shadow:0 0 0 1px #000"></div>'
+    +'<div style="position:absolute;left:'+Math.min(92,Math.max(8,v))+'%;top:0;transform:translateX(-50%);'
+      +'color:#fff;font-size:.75rem;font-weight:700;line-height:26px;text-shadow:0 0 3px #000">'+v+'</div>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--sub);margin-top:2px">'
+      +'<span>신약 0</span><span>중화 50</span><span>신강 100</span></div></div>';
+}
+// 신강약 계산 (위치 가중) — 차트·용신 공용
+function sinStrength(P,dayStem){
+  const W_GAN={년:0.8,월:1.0,시:1.0}, W_JI={년:0.8,월:2.0,일:1.5,시:1.0};
+  const cat={비겁:0,식상:0,재성:0,관성:0,인성:0};
+  let ally=0,total=0;
+  for(const k of Object.keys(P)){
+    if(k!=='일'){const c=CAT_OF[tenGod(dayStem,P[k].id%10)];cat[c]++;
+      total+=W_GAN[k];if(c==='비겁'||c==='인성')ally+=W_GAN[k];}
+    const cj=CAT_OF[tenGodJi(dayStem,P[k].id%12)];cat[cj]++;
+    total+=W_JI[k];if(cj==='비겁'||cj==='인성')ally+=W_JI[k];
+  }
+  const sinScore=Math.round(ally/total*100);
+  const sinType=sinScore>=55?'신강':(sinScore<=45?'신약':'중화');
+  return {sinScore,sinType,cat};
+}
+function renderCharts(P,dayStem,cnt){
+  const {sinScore,sinType,cat}=sinStrength(P,dayStem);
+  const EL_COLOR=['#2e7d4f','#c0392b','#b8860b','#8896a6','#2b3a55'];
+  const maxEl=Math.max(...cnt,1);
+  let oh='';for(let e=0;e<5;e++)oh+=chartBar(EL_NAME[e]+EL_HAN[e],cnt[e],maxEl,EL_COLOR[e]);
+  const CAT_ORDER=['비겁','식상','재성','관성','인성'];
+  const CAT_COLOR={비겁:'#8a1c1c',식상:'#2e7d4f',재성:'#b8860b',관성:'#8896a6',인성:'#2b3a55'};
+  const maxCat=Math.max(...CAT_ORDER.map(c=>cat[c]),1);
+  let tg='';for(const c of CAT_ORDER)tg+=chartBar(c,cat[c],maxCat,CAT_COLOR[c]);
+  const hd=(t)=>'<div style="font-weight:700;color:var(--accent2);margin:0 0 6px;font-size:.92rem">'+t+'</div>';
+  return '<div class="card"><div class="sec-title">오행 · 십성 분포 & 신강지수</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:20px">'
+      +'<div style="flex:1;min-width:230px">'+hd('오행(五行) 분포')+oh+'</div>'
+      +'<div style="flex:1;min-width:230px">'+hd('십성(十星) 분포')+tg+'</div></div>'
+    +'<div style="margin-top:16px">'+hd('신강·신약 지수 — '+sinType+' ('+sinScore+')')+sinGauge(sinScore)+'</div>'
+    +'<div class="note">※ 신강지수는 월령(월지) 등 위치 가중을 반영해 아군(비겁·인성) 비율(%)로 산출한 간이 지표입니다. 45 이하 신약 · 55 이상 신강.</div></div>';
+}
+
+// ══ 격국(格局) · 용신(用神) ══
+const LOKJI=[2,3,5,6,5,6,8,9,11,0]; // 일간 -> 건록지(祿) 지지 index
+function gyeokguk(P,dayStem){
+  const mb=P['월'].id%12, hidden=JIJANGGAN[mb], mainGan=JI_MAIN_GAN[mb];
+  const stems=[]; for(const k of ['년','월','시']) if(P[k]) stems.push(P[k].id%10);
+  // 1) 건록·양인 우선 (월지가 일간의 록지/양인지)
+  if(mb===LOKJI[dayStem]) return {name:'건록격 建祿格',note:'월지 '+JI_H[mb]+'가 일간의 건록(祿)'};
+  if(YANGIN[dayStem]!=null&&mb===YANGIN[dayStem]) return {name:'양인격 羊刃格',note:'월지 '+JI_H[mb]+'가 일간의 양인(羊刃)'};
+  // 2) 지장간 중 천간 투출한 것(비겁 제외)으로 격 — 정기 우선, 그다음 중기·여기
+  const mainTen=tenGod(dayStem,mainGan), mainCat=CAT_OF[mainTen];
+  let gGan=null, tou=false;
+  if(mainCat!=='비겁'&&stems.includes(mainGan)){gGan=mainGan;tou=true;}
+  else for(const g of hidden){ if(stems.includes(g)&&CAT_OF[tenGod(dayStem,g)]!=='비겁'){gGan=g;tou=true;break;} }
+  // 3) 투출 없음 → 정기 기준 (정기가 비겁이면 비견/겁재격)
+  if(gGan===null){
+    if(mainCat==='비겁') return {name:(mainTen==='비견'?'비견격 比肩格':'겁재격 劫財格'),
+      note:'월지 '+JI_H[mb]+' 정기 '+mainTen+' (건록·양인 아님, 재관인 미투출)'};
+    gGan=mainGan;
+  }
+  const ten=tenGod(dayStem,gGan);
+  const NAME={정관:'정관격 正官格',편관:'편관격(칠살) 偏官格',정재:'정재격 正財格',편재:'편재격 偏財格',
+    식신:'식신격 食神格',상관:'상관격 傷官格',정인:'정인격 正印格',편인:'편인격 偏印格'};
+  return {name:NAME[ten]||ten+'격', ten,
+    note:'월지 '+JI_H[mb]+' 지장간 '+GAN_H[gGan]+'('+ten+')'+(tou?' 천간 투출':' · 미투출(정기 기준)')};
+}
+// 격국별 성향 한 줄
+const GYEOK_TRAIT={
+  '정관격 正官格':'명예·질서·책임을 중시하는 반듯한 관록(官祿)의 그릇입니다.',
+  '편관격(칠살) 偏官格':'결단·추진·개혁의 기상이 강한 무관(武官)형 그릇입니다.',
+  '정재격 正財格':'성실·근면하게 재물을 쌓는 안정 지향의 그릇입니다.',
+  '편재격 偏財格':'활동적이고 수완이 좋아 큰 재물을 다루는 사업형 그릇입니다.',
+  '식신격 食神格':'표현·연구·의식주 복이 있는 온화한 재능형 그릇입니다.',
+  '상관격 傷官格':'총명하고 예술·기술 감각이 뛰어난 표현형 그릇입니다.',
+  '정인격 正印格':'학문·인덕·수용력이 깊은 학자·교육형 그릇입니다.',
+  '편인격 偏印格':'직관·전문성·독창성이 뛰어난 전문가형 그릇입니다.',
+  '건록격 建祿格':'자립심과 주체성이 강한 자수성가형 그릇입니다.',
+  '양인격 羊刃格':'기세가 강하고 과감하여 큰일을 감당하는 그릇입니다.',
+  '비견격 比肩格':'자립심과 주체성이 강한 자수성가형 그릇입니다.',
+  '겁재격 劫財格':'경쟁심과 추진력이 강해 동료·동업과 인연이 깊은 그릇입니다.'};
+// 억부용신 판정 (renderYongsin·CTX 공용)
+function yongsinDecision(cat,sinType){
+  let yong,hui,gi,logic;
+  if(sinType==='신강'){
+    if(cat.인성>=cat.비겁&&cat.인성>0){yong='재성';hui='식상';gi='인성';
+      logic='인성(印)이 왕해 일간이 강하니, <b>재성(財)</b>으로 인성을 억제하고 식상으로 기운을 흘려보내는 것이 좋습니다.';}
+    else{yong=(cat.관성>0?'관성':'식상');hui=(yong==='관성'?'식상':'재성');gi='비겁';
+      logic='비겁(比劫)이 왕해 일간이 강하니, <b>'+(yong==='관성'?'관성(官)으로 억제':'식상(食傷)으로 설기')+'</b>하고 재성으로 결실을 맺는 것이 좋습니다.';}
+  }else if(sinType==='신약'){
+    if(cat.관성>=2||cat.재성>=3){yong='인성';hui='비겁';gi='재성';
+      logic='재관(財官)이 강해 일간이 약하니, <b>인성(印)</b>으로 통관·생조하여 일간을 보호하는 것이 좋습니다.';}
+    else{yong='비겁';hui='인성';gi='식상';
+      logic='일간이 약하니 <b>비겁(比劫)</b>으로 부조하고 인성(印)으로 생조하여 힘을 보강하는 것이 좋습니다.';}
+  }else{yong='중화';hui='—';gi='—';
+    logic='일간의 강약이 중화(中和)에 가까워 특정 오행에 크게 치우치지 않습니다. 대운의 흐름에 따라 부족한 쪽을 보완하는 것이 좋습니다.';}
+  return {yong,hui,gi,logic};
+}
+function renderYongsin(P,dayStem){
+  const D=GAN_EL[dayStem];
+  const E={비겁:D,인성:(D+4)%5,식상:(D+1)%5,재성:(D+2)%5,관성:(D+3)%5};
+  const {sinScore,sinType,cat}=sinStrength(P,dayStem);
+  const gg=gyeokguk(P,dayStem);
+  const {yong,hui,gi,logic}=yongsinDecision(cat,sinType);
+  const catEl=(c)=>(c==='중화'||c==='—')?c:c+' <b class="el-'+EL_NAME[E[c]]+'">'+EL_NAME[E[c]]+'('+EL_HAN[E[c]]+')</b>';
+  // 조후
+  const monJi=P['월'].id%12;
+  const season=['겨울','겨울','봄','봄','봄','여름','여름','여름','가을','가을','가을','겨울'][monJi];
+  const JOHU={겨울:'겨울생이라 한기가 강하니, 조후(調候)로 <b class="el-화">화(火)</b>의 따뜻함이 반가운 명입니다.',
+    여름:'여름생이라 열기가 강하니, 조후로 <b class="el-수">수(水)</b>의 시원함이 반가운 명입니다.',
+    봄:'봄생이라 목기가 왕하니, 화(火)로 설기하거나 금(金)으로 다스리면 조후가 맞습니다.',
+    가을:'가을생이라 금기가 왕하니, 화(火)로 다스리거나 수(水)로 설기하면 조후가 맞습니다.'};
+  return '<div class="card"><div class="sec-title">격국 · 용신 (格局 · 用神)</div>'
+    +'<table><tr><th style="width:96px">구분</th><th>내용</th></tr>'
+    +'<tr><td style="font-weight:700">격국</td><td style="text-align:left"><b class="el-'+EL_NAME[D]+'">'+gg.name+'</b>'
+      +'<div style="color:var(--sub);font-size:.82rem">'+gg.note+'</div>'
+      +'<div style="margin-top:2px">'+(GYEOK_TRAIT[gg.name]||'')+'</div></td></tr>'
+    +'<tr><td style="font-weight:700">용신(억부)</td><td style="text-align:left">'+catEl(yong)+'</td></tr>'
+    +'<tr><td style="font-weight:700">희신</td><td style="text-align:left">'+catEl(hui)+'</td></tr>'
+    +'<tr><td style="font-weight:700">기신(꺼림)</td><td style="text-align:left">'+catEl(gi)+'</td></tr>'
+    +'<tr><td style="font-weight:700">조후 참고</td><td style="text-align:left">'+JOHU[season]+'</td></tr>'
+    +'</table>'
+    +'<div style="margin-top:8px;line-height:1.8">'+logic+'</div>'
+    +'<div class="note">※ 격국=월지(월령) 정기·투출 기준, 용신=억부법(신강 '+sinScore+') 기준의 간이 판정입니다. 조후·병약·통관 등 다른 용신법과 유파에 따라 달라질 수 있어 참고용입니다.</div></div>';
+}
+
+// ══ 납음오행(納音五行) · 명궁(命宮) ══
+// 60갑자 30쌍: [납음이름, 오행index(목0화1토2금3수4)]
+const NAPEUM=[
+  ['해중금',3],['노중화',1],['대림목',0],['노방토',2],['검봉금',3],
+  ['산두화',1],['간하수',4],['성두토',2],['백랍금',3],['양류목',0],
+  ['천중수',4],['옥상토',2],['벽력화',1],['송백목',0],['장류수',4],
+  ['사중금',3],['산하화',1],['평지목',0],['벽상토',2],['금박금',3],
+  ['복등화',1],['천하수',4],['대역토',2],['차천금',3],['상자목',0],
+  ['대계수',4],['사중토',2],['천상화',1],['석류목',0],['대해수',4]
+];
+const napeumOf=(id)=>NAPEUM[Math.floor(id/2)];
+function renderNapeum(P){
+  const order=['년','월','일','시'].filter(k=>P[k]);
+  let rows='';
+  for(const k of order){
+    const id=P[k].id, np=napeumOf(id), e=np[1];
+    rows+='<tr><td style="font-weight:700">'+k+'주</td><td>'+hanjaPillar(id)+' <span style="color:var(--sub)">'+hangulPillar(id)+'</span></td>'
+      +'<td class="el-'+EL_NAME[e]+'" style="font-weight:700">'+np[0]+' ('+EL_NAME[e]+EL_HAN[e]+')</td></tr>';
+  }
+  const ynp=napeumOf(P['년'].id);
+  return '<div class="card"><div class="sec-title">납음오행 (納音五行)</div>'
+    +'<table><tr><th>기둥</th><th>간지</th><th>납음</th></tr>'+rows+'</table>'
+    +'<div class="note">※ 60갑자별 소리의 오행. 특히 년주 납음(<b>'+ynp[0]+' '+EL_NAME[ynp[1]]+'</b>)을 본명(本命) 납음이라 하여 예부터 그 사람의 근본 기질로 보았습니다.</div></div>';
+}
+function renderMyeonggung(P,dayStem,hb,yearStem){
+  if(hb==null) return ''; // 시각 미상 시 명궁 생략
+  const mb=P['월'].id%12;
+  const sum=(mb+1)+(hb+1);                         // 생월수 + 생시수 (자=1)
+  let N=(sum<=14)?(14-sum):(26-sum); if(N===0)N=12;
+  const gung=N-1;                                  // 명궁 지지 index (자0)
+  const inStem=((yearStem%5)*2+2)%10;              // 오호둔 인월 천간
+  const gStem=(inStem+((gung-2+12)%12))%10;        // 명궁 천간
+  let gid=-1; for(let i=0;i<60;i++)if(i%10===gStem&&i%12===gung){gid=i;break;}
+  const e=JI_EL[gung], ten=tenGodJi(dayStem,gung), np=napeumOf(gid);
+  return '<div class="card"><div class="sec-title">명궁 (命宮)</div>'
+    +'<div class="meta"><span>명궁 <b class="el-'+EL_NAME[GAN_EL[gStem]]+'">'+hanjaPillar(gid)+' '+hangulPillar(gid)+'</b></span>'
+    +'<span>지지 오행 <b class="el-'+EL_NAME[e]+'">'+EL_NAME[e]+EL_HAN[e]+'</b></span>'
+    +'<span>십성 <b>'+ten+'</b></span>'
+    +'<span>납음 <b>'+np[0]+'</b></span></div>'
+    +'<div style="line-height:1.85">명궁은 태어난 <b>월지·시지</b>로 정하는 선천의 자리로, 사주 전체의 <b>정신적 지향과 그릇</b>을 봅니다. '
+    +'일간 기준 <b>'+ten+'</b>에 해당하여 <b>'+(CAT_PHRASE[CAT_OF[ten]]||'')+'</b>의 기운이 바탕에 깔려 있습니다.</div>'
+    +'<div class="note">※ 명궁 지지 = 생월수+생시수(합 ≤14: 14−합, 초과: 26−합), 천간은 년간 오호둔(五虎遁). 자평 전통 방식이며 시각(시지)이 있어야 산출됩니다.</div></div>';
+}
+
+// ══ 합·충·형·파·해 (刑沖破害) ══
+const _k2=(a,b)=>a<b?a+'-'+b:b+'-'+a;
+const GANHAP=(a,b)=>(a+5)%10===b;            // 천간합 갑기·을경…
+const GANCHUNG=(a,b)=>Math.abs(a-b)===6;      // 천간충 갑경·을신·병임·정계
+const YUKHAP=(a,b)=>a!==b&&(1-a+12)%12===b;   // 지지 육합 (자축·인해…)
+const CHUNG=(a,b)=>(a+6)%12===b;              // 지지 충 (자오·축미…)
+const HAE=(a,b)=>a!==b&&(7-a+12)%12===b;      // 지지 해 (자미·축오…)
+const PA_SET=new Set(['0-9','3-6','5-8','2-11','1-4','7-10']); // 자유·오묘·신사·인해·진축·술미
+const PA=(a,b)=>PA_SET.has(_k2(a,b));
+const HYUNG_SET=new Set(['0-3','2-5','5-8','2-8','1-10','7-10','1-7']); // 자묘·인사신·축술미
+const HYUNG=(a,b)=>a===b?[4,6,9,11].includes(a):HYUNG_SET.has(_k2(a,b)); // 자형 진오유해
+const BANHAP=(a,b)=>a!==b&&SAMHAP.some(G=>G.s.includes(a)&&G.s.includes(b));
+const REL_COLOR={합:'#2e7d4f',삼합:'#2e7d4f',충:'#c0392b',형:'#7b3fa0',파:'#cc7a00',해:'#8a5a2b'};
+const REL_MEAN={천간합:'천간이 합하여 유정(有情)해집니다.',천간충:'천간이 충돌하여 변동·갈등이 있습니다.',
+  육합:'지지가 합하여 결속·화합합니다.',삼합:'삼합국을 이뤄 강한 세력을 형성합니다.',
+  충:'지지가 충돌하여 이동·변동·자극이 있습니다.',형:'형(刑) — 갈등·조정·수술·관재를 조심합니다.',
+  파:'파(破) — 깨짐·이탈·중단의 기운입니다.',해:'해(害) — 시기·방해·불화의 기운입니다.'};
+const EL_BG5=['#e8f3ec','#fbe9e7','#f7f0dd','#eef1f5','#e9edf4'];
+const EL_FG5=['#2e7d4f','#c0392b','#b8860b','#8896a6','#2b3a55'];
+function renderRelations(P){
+  const order=['시','일','월','년'].filter(k=>P[k]);
+  const n=order.length;
+  const gan=order.map(k=>P[k].id%10), ji=order.map(k=>P[k].id%12);
+  const ganRels=[], jiRels=[];
+  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){
+    const gl=[];
+    if(GANHAP(gan[i],gan[j]))gl.push(['합','천간합']);
+    if(GANCHUNG(gan[i],gan[j]))gl.push(['충','천간충']);
+    if(gl.length)ganRels.push({i,j,labs:gl});
+    const jl=[];
+    if(YUKHAP(ji[i],ji[j]))jl.push(['합','육합']);
+    if(BANHAP(ji[i],ji[j]))jl.push(['삼합','삼합']);
+    if(CHUNG(ji[i],ji[j]))jl.push(['충','충']);
+    if(HYUNG(ji[i],ji[j]))jl.push(['형','형']);
+    if(PA(ji[i],ji[j]))jl.push(['파','파']);
+    if(HAE(ji[i],ji[j]))jl.push(['해','해']);
+    if(jl.length)jiRels.push({i,j,labs:jl});
+  }
+  // ── SVG 관계도 ──
+  const W=110,H=280,yG=110,yJ=180,r=22;
+  const cx=(c)=>c*W+W/2;
+  const arc=(i,j,anchorY,dir,labs)=>{
+    const xi=cx(i),xj=cx(j),mid=(xi+xj)/2,dist=j-i,peak=16+dist*16;
+    const cy=anchorY+dir*peak, col=REL_COLOR[labs[0][0]];
+    const ly=anchorY+dir*(peak*0.6), text=labs.map(l=>l[0]).join('·');
+    const w=text.length*11+8;
+    return '<path d="M '+xi+' '+anchorY+' Q '+mid+' '+cy+' '+xj+' '+anchorY+'" fill="none" stroke="'+col+'" stroke-width="2"/>'
+      +'<rect x="'+(mid-w/2)+'" y="'+(ly-9)+'" width="'+w+'" height="17" rx="4" fill="'+col+'"/>'
+      +'<text x="'+mid+'" y="'+(ly+3.5)+'" fill="#fff" font-size="11" text-anchor="middle">'+text+'</text>';
+  };
+  let arcs='';
+  for(const rl of ganRels) arcs+=arc(rl.i,rl.j,yG-r,-1,rl.labs);
+  for(const rl of jiRels) arcs+=arc(rl.i,rl.j,yJ+r,1,rl.labs);
+  let nodes='';
+  for(let c=0;c<n;c++){
+    const geg=GAN_EL[gan[c]], jeg=JI_EL[ji[c]];
+    nodes+='<text x="'+cx(c)+'" y="20" text-anchor="middle" font-size="13" fill="#7a6f63">'+order[c]+'주</text>'
+      +'<circle cx="'+cx(c)+'" cy="'+yG+'" r="'+r+'" fill="'+EL_BG5[geg]+'" stroke="'+EL_FG5[geg]+'"/>'
+      +'<text x="'+cx(c)+'" y="'+(yG+8)+'" text-anchor="middle" font-size="24" font-weight="700" fill="'+EL_FG5[geg]+'">'+GAN_H[gan[c]]+'</text>'
+      +'<circle cx="'+cx(c)+'" cy="'+yJ+'" r="'+r+'" fill="'+EL_BG5[jeg]+'" stroke="'+EL_FG5[jeg]+'"/>'
+      +'<text x="'+cx(c)+'" y="'+(yJ+8)+'" text-anchor="middle" font-size="24" font-weight="700" fill="'+EL_FG5[jeg]+'">'+JI_H[ji[c]]+'</text>';
+  }
+  const svg='<svg viewBox="0 0 '+(n*W)+' '+H+'" style="width:100%;max-width:'+(n*118)+'px;display:block;margin:4px auto">'+arcs+nodes+'</svg>';
+  // ── 범례 ──
+  const legItems=['합','삼합','충','형','파','해'];
+  const legend='<div style="display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;margin:6px 0 4px">'
+    +legItems.map(l=>'<span style="font-size:.8rem"><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:'+REL_COLOR[l]+';vertical-align:middle;margin-right:3px"></span>'+l+'</span>').join('')+'</div>';
+  // ── 텍스트 목록 ──
+  let items='';
+  const add=(chars,labs)=>{
+    for(const [sh,full] of labs){
+      items+='<tr><td style="font-weight:700;white-space:nowrap">'+chars+'</td>'
+        +'<td><span style="color:#fff;background:'+REL_COLOR[sh]+';border-radius:4px;padding:1px 7px;font-size:.8rem">'+full+'</span></td>'
+        +'<td style="text-align:left;color:var(--sub);font-size:.86rem">'+(REL_MEAN[full]||'')+'</td></tr>'; }
+  };
+  for(const rl of ganRels) add(order[rl.i]+'·'+order[rl.j]+' 천간 '+GAN_H[gan[rl.i]]+GAN_H[gan[rl.j]], rl.labs);
+  for(const rl of jiRels) add(order[rl.i]+'·'+order[rl.j]+' 지지 '+JI_H[ji[rl.i]]+JI_H[ji[rl.j]], rl.labs);
+  const table=items?('<table><tr><th>위치</th><th>관계</th><th>의미</th></tr>'+items+'</table>')
+    :'<div class="note" style="text-align:center">뚜렷한 합·충·형·파·해 관계가 없습니다.</div>';
+  return '<div class="card"><div class="sec-title">합·충·형·파·해 (刑沖破害)</div>'+svg+legend+table
+    +'<div class="note">※ 원국 4기둥 사이의 천간·지지 상호작용입니다. 인접·원격, 합화 성립 여부 등 세부 통변은 유파에 따라 달라집니다.</div></div>';
+}
+
+// ══ AI 사주 풀이 (Claude API, server.mjs 프록시) ══
+function renderAiCard(){
+  const local=(location.protocol==='file:')||['localhost','127.0.0.1','::1'].includes(location.hostname);
+  if(!local){
+    return '<div class="card no-print"><div class="sec-title">🤖 AI 사주 풀이</div>'
+      +'<div class="note" style="margin-top:8px;line-height:1.7">이 <b>공개 버전</b>에서는 AI 풀이가 제공되지 않습니다. AI 사주 풀이는 개인 API 크레딧을 사용하므로 안전을 위해 <b>로컬에서 <code>server.mjs</code>로 실행할 때만</b> 동작합니다. 위의 사주 계산·해석(만세력·격국·용신·신살·대운·합충형파해 등) 기능은 모두 그대로 이용하실 수 있습니다.</div></div>';
+  }
+  return '<div class="card no-print"><div class="sec-title">🤖 AI 사주 풀이</div>'
+    +'<div class="meta"><span>Claude(Opus)가 위 명식(일간·격국·용신·오행·신살·대운)을 종합해 맞춤 풀이를 작성합니다.</span></div>'
+    +'<button class="go" id="aiBtn">🤖 AI 풀이 생성</button>'
+    +'<div id="aiOut" class="aiout"></div>'
+    +'<div class="note">※ AI가 명리 데이터에 근거해 생성한 참고용 해석입니다. <b>server.mjs</b>로 실행하고, API 키(ANTHROPIC_API_KEY) 또는 Claude 로그인(ant auth login)이 설정돼 있어야 합니다.</div></div>';
+}
+function mdLite(s){
+  const esc=s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return esc
+    .replace(/^\s*#{4,6}\s?(.*)$/gm,'<h5>$1</h5>')
+    .replace(/^\s*#{2,3}\s?(.*)$/gm,'<h4>$1</h4>')
+    .replace(/^\s*#\s?(.*)$/gm,'<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
+    .replace(/^\s*[-*]\s+(.*)$/gm,'· $1')
+    .replace(/\n/g,'<br>');
+}
+async function runAi(){
+  const out=document.getElementById('aiOut'), btn=document.getElementById('aiBtn');
+  if(!window.__sajuAi){out.innerHTML='<span class="err">먼저 사주를 조회하세요.</span>';return;}
+  out.classList.add('streaming'); out.textContent=''; btn.disabled=true; btn.textContent='생성 중… (최대 1분)';
+  let full='';
+  try{
+    const res=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({saju:window.__sajuAi})});
+    if(!res.ok){out.classList.remove('streaming');
+      out.innerHTML='<span class="err" style="white-space:pre-wrap">'+(await res.text()).replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</span>';return;}
+    const reader=res.body.getReader(), td=new TextDecoder();
+    for(;;){const {done,value}=await reader.read(); if(done)break;
+      full+=td.decode(value,{stream:true}); out.textContent=full; out.scrollTop=out.scrollHeight;}
+    out.classList.remove('streaming'); out.innerHTML=mdLite(full);
+  }catch(e){out.classList.remove('streaming');
+    out.innerHTML='<span class="err">요청 실패: '+e.message+' — 파일을 직접 열지 말고 server.mjs(localhost:8123)로 실행했는지 확인하세요.</span>';}
+  finally{btn.disabled=false; btn.textContent='🤖 AI 풀이 다시 생성';}
+}
+function wireAi(){const b=document.getElementById('aiBtn'); if(b)b.addEventListener('click',runAi);}
+
+function daysBetween(dStr1,dStr2){const[a,b,c]=dStr1.split('-').map(Number);const[d,e,f]=dStr2.split('-').map(Number);
+  return toJDN(d,e,f)-toJDN(a,b,c);}
+
+function renderDaeun(dateStr,jdn,yearId,monId,dayStem,gender){
+  const yStemYin=(yearId%10)%2; // 0=양,1=음
+  // 양남/음녀=순행, 음남/양녀=역행
+  const forward=(gender==='M'&&yStemYin===0)||(gender==='F'&&yStemYin===1);
+  // 節 경계
+  const mc=WEB_DATA.monthChanges;
+  let nextB=null,prevB=null;
+  for(let i=0;i<mc.length;i++){if(mc[i][0]>dateStr){nextB=mc[i][0];prevB=mc[i-1]?mc[i-1][0]:mc[0][0];break;}}
+  if(!nextB){prevB=mc[mc.length-1][0];}
+  let days= forward? (nextB?daysBetween(dateStr,nextB):3) : (prevB?daysBetween(prevB,dateStr):3);
+  let startAge=Math.max(1,Math.round(days/3));
+
+  let rows='';
+  for(let i=0;i<8;i++){
+    const pid=((monId+(forward?(i+1):-(i+1)))%60+60)%60;
+    const age=startAge+i*10;
+    const gTen=tenGod(dayStem,pid%10), jTen=tenGodJi(dayStem,pid%12);
+    const ge=EL_NAME[GAN_EL[pid%10]];
+    rows+='<tr><td>'+age+'~'+(age+9)+'세</td>'
+      +'<td class="el-'+ge+'" style="font-weight:700">'+hanjaPillar(pid)+' <span style="color:var(--sub);font-weight:400">'+hangulPillar(pid)+'</span></td>'
+      +'<td>'+gTen+'</td><td>'+jTen+'</td></tr>';
+  }
+  return '<div class="card"><div class="sec-title">대운 (大運) · 10년 주기</div>'
+    +'<div class="meta"><span>방향 <span class="dir">'+(forward?'순행 順':'역행 逆')+'</span></span>'
+    +'<span>대운수(시작) <b>'+startAge+'세</b></span></div>'
+    +'<table><tr><th>나이</th><th>대운</th><th>천간 십성</th><th>지지 십성</th></tr>'+rows+'</table>'
+    +'<div class="note">※ 대운수는 절입일까지의 일수를 3으로 나눈 간이 계산입니다(정밀 계산은 절입 시각 반영).</div></div>';
+}
+
+function renderSaeun(birthY,yearId,dayStem){
+  const now=new Date().getFullYear();
+  const start=Math.max(birthY,now-1);
+  let rows='';
+  for(let i=0;i<12;i++){
+    const yr=start+i; if(yr>2050)break;
+    const yid=lookupChange(WEB_DATA.yearChanges,yr+'-07-01');
+    const ge=EL_NAME[GAN_EL[yid%10]];
+    const gTen=tenGod(dayStem,yid%10), jTen=tenGodJi(dayStem,yid%12);
+    rows+='<tr class="saeun-row" data-yid="'+yid+'" data-yr="'+yr+'" data-age="'+(yr-birthY)+'"'+(yr===now?' style="background:#faf3e6"':'')+'><td>'+yr+(yr===now?' ★':'')+'</td>'
+      +'<td>만 '+(yr-birthY)+'세</td>'
+      +'<td class="el-'+ge+'" style="font-weight:700">'+hanjaPillar(yid)+' <span style="color:var(--sub);font-weight:400">'+hangulPillar(yid)+'</span></td>'
+      +'<td>'+gTen+'</td><td>'+jTen+'</td></tr>';
+  }
+  return '<div class="card"><div class="sec-title">세운 (歲運) · 연도별</div>'
+    +'<table><tr><th>연도</th><th>나이</th><th>세운</th><th>천간 십성</th><th>지지 십성</th></tr>'+rows+'</table>'
+    +'<div id="saeunDetail"></div>'
+    +'<div class="note">※ 입춘 기준. ★는 올해입니다. <b>연도를 클릭</b>하면 그 해 운의 상세 해석이 나타납니다.</div></div>';
+}
+
+// ══ 월운 · 일진 (십성은 사주 일간 기준) ══
+let CTX=null;  // {dayStem}
+function renderWolunCard(defY){
+  let opts='';for(let y=1900;y<=2050;y++)opts+='<option value="'+y+'"'+(y===defY?' selected':'')+'>'+y+'년</option>';
+  return '<div class="card"><div class="sec-title">월운 (月運) · 월별</div>'
+    +'<div class="meta yun-sel"><span>연도 <select id="wolunYear">'+opts+'</select></span></div>'
+    +'<div id="wolunBody"></div>'
+    +'<div id="wolunDetail"></div>'
+    +'<div class="note">※ 절기(節) 시작일 기준 월주입니다. ★는 이번 달. <b>월을 클릭</b>하면 상세 해석이 나타납니다.</div></div>';
+}
+function fillWolun(y){
+  if(!CTX)return; const ds=CTX.dayStem, mc=WEB_DATA.monthChanges, ys=String(y);
+  const now=new Date(), todayStr=now.getFullYear()+'-'+pad2(now.getMonth()+1)+'-'+pad2(now.getDate());
+  const rows=[];
+  for(let i=0;i<mc.length;i++){
+    const d=mc[i][0], pid=mc[i][1];
+    if(d.slice(0,4)!==ys)continue;
+    const next=mc[i+1]?mc[i+1][0]:'9999';
+    const isNow=(todayStr>=d&&todayStr<next);
+    const ge=EL_NAME[GAN_EL[pid%10]];
+    rows.push('<tr class="wolun-row" data-pid="'+pid+'" data-date="'+d+'"'+(isNow?' style="background:#faf3e6"':'')+'><td>'+d+(isNow?' ★':'')+'</td>'
+      +'<td class="el-'+ge+'" style="font-weight:700">'+hanjaPillar(pid)+' <span style="color:var(--sub);font-weight:400">'+hangulPillar(pid)+'</span></td>'
+      +'<td>'+tenGod(ds,pid%10)+'</td><td>'+tenGodJi(ds,pid%12)+'</td></tr>');
+  }
+  document.getElementById('wolunBody').innerHTML=
+    '<table><tr><th>절기 시작</th><th>월주</th><th>천간 십성</th><th>지지 십성</th></tr>'+rows.join('')+'</table>';
+}
+function renderIljinCard(defY,defM){
+  let yo='';for(let y=1900;y<=2050;y++)yo+='<option value="'+y+'"'+(y===defY?' selected':'')+'>'+y+'</option>';
+  let mo='';for(let m=1;m<=12;m++)mo+='<option value="'+m+'"'+(m===defM?' selected':'')+'>'+m+'월</option>';
+  return '<div class="card"><div class="sec-title">일진 (日辰) · 일별 달력</div>'
+    +'<div class="meta yun-sel"><span><select id="iljinYear">'+yo+'</select> <select id="iljinMonth">'+mo+'</select></span></div>'
+    +'<div id="iljinBody"></div>'
+    +'<div id="iljinDetail"></div>'
+    +'<div class="note">※ 각 날짜의 일주(日柱)와 일간 십성. 배경색은 일간 오행. ★는 오늘. <b>날짜를 클릭</b>하면 그 날 일진의 상세 해석이 나타납니다.</div></div>';
+}
+// 운(運) 상세 해석 공용 — 년운·월운·일진 (클릭 대상 ↔ 본인 사주)
+// 십성별 재물·투자 성향 (명리학 재성 관점을 투자 흐름으로 풀이 — 오락·참고용)
+const INVEST_TEN={
+  비견:'경쟁·자립의 기운. 자기 원칙 매매엔 좋으나 지출·투자 확대는 신중, 분산 유지.',
+  겁재:'손재(損財) 주의 기운. 동업·추천주·무리한 베팅에서 손실 위험이 커 방어적 운용이 안전.',
+  식신:'재물을 낳는 기운. 현금흐름·실적 좋은 종목 발굴과 꾸준한 적립에 우호적.',
+  상관:'아이디어·순발력의 기운. 성장·테마주엔 강하나 변동·과신·구설을 주의.',
+  편재:'큰 기회와 변동성의 기운. 기회 포착엔 좋으나 과욕·몰빵은 금물, 분할 접근 권장.',
+  정재:'안정 수익의 기운. 배당·가치주와 꾸준함이 유리, 무리한 레버리지·단타는 자제.',
+  편관:'압박·급변의 기운. 스트레스 큰 국면이니 레버리지 축소·손절 기준 엄수.',
+  정관:'규율·관리의 기운. 원칙 매매·분산·방어적 포트폴리오에 어울림.',
+  편인:'직관·재검토의 기운. 남다른 관점은 강점이나 결단 지연·정보 편식을 주의.',
+  정인:'학습·관망의 기운. 실행보다 공부·정보 정리에 좋고 성급한 진입은 자제.'};
+const INVEST_KIND={
+  chung:'⚠️ 변동성 큰 국면 — 급등락·이벤트 리스크. 추격매수 금지, 손절·익절 기준을 반드시 지키세요.',
+  good:'우호적 흐름 — 미리 준비한 계획의 진입·비중확대를 분할로 고려할 만합니다.',
+  bad:'역풍 흐름 — 신규 진입보다 현금 비중 확대·방어적 운용이 안전합니다.',
+  plain:'무난한 흐름 — 기존 전략과 원칙을 유지하세요.'};
+function unseDetail(pid, headline, scope){
+  if(!CTX)return '';
+  const ds=CTX.dayStem, db=CTX.dayBranch, gs=pid%10, gb=pid%12;
+  const ge=EL_NAME[GAN_EL[gs]], je=EL_NAME[JI_EL[gb]];
+  const gTen=tenGod(ds,gs), jTen=tenGodJi(ds,gb), uns=unseong(ds,gb);
+  const rels=[];
+  if(GANHAP(ds,gs))rels.push('일간과 <b class="el-목">천간합</b>(협력·유정)');
+  if(GANCHUNG(ds,gs))rels.push('일간과 <b class="el-화">천간충</b>(충돌·변동)');
+  if(YUKHAP(db,gb))rels.push('일지와 <b class="el-목">육합</b>(화합·결속)');
+  if(BANHAP(db,gb))rels.push('일지와 <b class="el-목">삼합</b>(세력 형성)');
+  if(CHUNG(db,gb))rels.push('일지와 <b class="el-화">충</b>(이동·변동·자극)');
+  if(HYUNG(db,gb))rels.push('일지와 <b style="color:#7b3fa0">형</b>(갈등·조정)');
+  if(PA(db,gb))rels.push('일지와 <b style="color:#cc7a00">파</b>(중단·이탈)');
+  if(HAE(db,gb))rels.push('일지와 <b style="color:#8a5a2b">해</b>(방해·불화)');
+  const hasChung=GANCHUNG(ds,gs)||CHUNG(db,gb);
+  let fav=0; for(const e of [GAN_EL[gs],JI_EL[gb]]){if(CTX.yongEls.has(e))fav++; if(CTX.giEls.has(e))fav--;}
+  const kind=hasChung?'chung':(fav>0?'good':(fav<0?'bad':'plain'));
+  const when=scope==='년'?'올해는':scope==='월'?'이 달은':'오늘은';
+  const investLabel=scope==='년'?'올해 투자 흐름':scope==='월'?'이 달 투자 흐름':'오늘 투자 흐름';
+  const period=scope==='년'?'한 해':scope==='월'?'한 달':'하루';
+  let verdict,vcol;
+  if(hasChung){verdict='변동수 — 이동·이사·변화·자극이 큰 '+period+'. 중요한 결정·계약은 신중히.';vcol='var(--accent)';}
+  else if(fav>0){verdict='길(吉) — 용신 기운이 드는 '+period+'. 시작·확장·교류에 유리합니다.';vcol='var(--mok)';}
+  else if(fav<0){verdict='주의 — 기신 기운의 '+period+'. 무리한 확장보다 내실·관리가 좋습니다.';vcol='var(--accent)';}
+  else{verdict='평(平) — 무난한 '+period+'. 흐름대로 진행하세요.';vcol='var(--sub)';}
+  const theme=DAEUN_THEME[gTen]||'';
+  return '<div style="border-top:1px dashed var(--line);margin-top:12px;padding-top:12px">'
+    +'<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">'
+      +'<div style="text-align:center;min-width:64px">'
+        +'<div style="font-size:.78rem;color:var(--sub)">'+headline+'</div>'
+        +'<div class="el-'+ge+'" style="font-size:1.9rem;font-weight:700;line-height:1.2">'+hanjaPillar(pid)+'</div>'
+        +'<div style="font-size:.8rem;color:var(--sub)">'+hangulPillar(pid)+'</div></div>'
+      +'<div style="flex:1;min-width:190px;font-size:.9rem;line-height:1.9">'
+        +'<div>천간 <b>'+GAN_H[gs]+'</b>('+ge+') · 십성 <b class="el-'+ge+'">'+gTen+'</b></div>'
+        +'<div>지지 <b>'+JI_H[gb]+'</b>('+je+') · 십성 <b>'+jTen+'</b> · 운성 <b>'+uns+'</b></div>'
+      +'</div></div>'
+    +(rels.length?'<div style="margin-top:8px;font-size:.9rem"><b>관계</b> — '+rels.join(' · ')+'</div>':'')
+    +'<div style="margin-top:8px;line-height:1.85">'+when+' <b>'+gTen+'</b>의 기운이 들어 <b>'+theme+'</b>과 관련된 흐름이며, 십이운성은 <b>'+uns+'</b>에 해당합니다.</div>'
+    +'<div style="margin-top:6px;font-weight:700;color:'+vcol+'">▶ '+verdict+'</div>'
+    +'<div style="margin-top:10px;padding-top:9px;border-top:1px dotted var(--line)">'
+      +'<div style="font-weight:700;color:var(--accent2)">📈 주식·투자 관점 <span style="font-size:.78rem;color:var(--sub);font-weight:400">('+investLabel+')</span></div>'
+      +'<div style="line-height:1.85;margin-top:3px"><b>'+gTen+'</b>의 기운: '+INVEST_TEN[gTen]+'<br>'+INVEST_KIND[kind]+'</div></div>'
+    +'<div class="note" style="color:var(--accent)">※ 명리학에 기반한 <b>오락·참고용</b> 해석일 뿐 <b>투자 자문·권유가 아닙니다.</b> 실제 매매 판단과 손익 책임은 전적으로 본인에게 있으며, 시장 분석·전문가 상담을 대신하지 않습니다.</div>'
+    +'<div class="note">※ 본인 사주(일간 '+GAN[ds]+GAN_H[ds]+', 용신 기준)와의 관계로 본 참고 해석입니다.</div></div>';
+}
+// 일진 상세 (클릭한 날) — 요일 포함 헤드라인
+function iljinDetail(pid,y,m,d){
+  const wd=WD_JDN[((toJDN(y,m,d)%7)+7)%7];
+  return unseDetail(pid, y+'.'+pad2(m)+'.'+pad2(d)+' ('+wd+')', '일');
+}
+function fillIljin(y,m){
+  if(!CTX)return; const ds=CTX.dayStem, off=WEB_DATA.dayPillarOffset;
+  const firstJdn=toJDN(y,m,1), firstDow=((firstJdn%7)+7)%7; // 0=월
+  const nY=m===12?y+1:y, nM=m===12?1:m+1, dim=toJDN(nY,nM,1)-firstJdn;
+  const now=new Date(), isTM=(now.getFullYear()===y&&now.getMonth()+1===m), today=now.getDate();
+  const WD=['월','화','수','목','금','토','일'];
+  let html='<table class="iljin"><tr>'+WD.map(w=>'<th>'+w+'</th>').join('')+'</tr><tr>';
+  let col=0;
+  for(let i=0;i<firstDow;i++){html+='<td class="empty"></td>';col++;}
+  for(let d=1;d<=dim;d++){
+    if(col===7){html+='</tr><tr>';col=0;}
+    const jdn=firstJdn+(d-1), pid=((jdn+off)%60+60)%60, ge=EL_NAME[GAN_EL[pid%10]];
+    const star=(isTM&&d===today);
+    html+='<td class="ijcell bg-'+ge+(star?' today':'')+'" data-pid="'+pid+'" data-y="'+y+'" data-m="'+m+'" data-d="'+d+'">'
+      +'<div class="dnum">'+d+(star?' ★':'')+'</div>'
+      +'<div class="ijg el-'+ge+'">'+hanjaPillar(pid)+'</div>'
+      +'<div style="font-size:.62rem;color:var(--sub)">'+tenGod(ds,pid%10)+'</div></td>';
+    col++;
+  }
+  while(col>0&&col<7){html+='<td class="empty"></td>';col++;}
+  html+='</tr></table>';
+  document.getElementById('iljinBody').innerHTML=html;
+}
+function wireYunControls(){
+  // 월운
+  const wy=document.getElementById('wolunYear'), wdet=document.getElementById('wolunDetail');
+  if(wy)wy.addEventListener('change',()=>{fillWolun(+wy.value); if(wdet)wdet.innerHTML='';});
+  if(wdet){const card=wdet.closest('.card');
+    card.addEventListener('click',e=>{const tr=e.target.closest('tr.wolun-row'); if(!tr)return;
+      card.querySelectorAll('tr.sel-row').forEach(x=>x.classList.remove('sel-row'));
+      tr.classList.add('sel-row');
+      wdet.innerHTML=unseDetail(+tr.dataset.pid, tr.dataset.date+' 시작 절기월', '월');});}
+  // 세운
+  const sdet=document.getElementById('saeunDetail');
+  if(sdet){const card=sdet.closest('.card');
+    card.addEventListener('click',e=>{const tr=e.target.closest('tr.saeun-row'); if(!tr)return;
+      card.querySelectorAll('tr.sel-row').forEach(x=>x.classList.remove('sel-row'));
+      tr.classList.add('sel-row');
+      sdet.innerHTML=unseDetail(+tr.dataset.yid, tr.dataset.yr+'년 (만 '+tr.dataset.age+'세)', '년');});}
+  // 일진
+  const iy=document.getElementById('iljinYear'), im=document.getElementById('iljinMonth');
+  const det=document.getElementById('iljinDetail');
+  const clearDet=()=>{ if(det)det.innerHTML=''; };
+  if(iy&&im){const f=()=>{fillIljin(+iy.value,+im.value);clearDet();};iy.addEventListener('change',f);im.addEventListener('change',f);}
+  const ib=document.getElementById('iljinBody');
+  if(ib)ib.addEventListener('click',e=>{
+    const td=e.target.closest('td.ijcell'); if(!td)return;
+    ib.querySelectorAll('td.sel').forEach(x=>x.classList.remove('sel'));
+    td.classList.add('sel');
+    det.innerHTML=iljinDetail(+td.dataset.pid,+td.dataset.y,+td.dataset.m,+td.dataset.d);
+  });
+}
+
+// 이벤트
+document.getElementById('genderSeg').addEventListener('click',e=>{
+  if(e.target.tagName==='BUTTON'){[...e.currentTarget.children].forEach(b=>b.classList.remove('on'));e.target.classList.add('on');}
+});
+document.getElementById('go').addEventListener('click',compute);
+document.addEventListener('keydown',e=>{if(e.key==='Enter')compute();});
+document.getElementById('btnPrint').addEventListener('click',()=>window.print());
+document.getElementById('btnImg').addEventListener('click',saveImage);
+
+// 결과를 PNG로 저장 (html2canvas 내장 사용)
+function saveImage(){
+  const node=document.getElementById('result');
+  if(typeof html2canvas!=='function'){alert('이미지 라이브러리를 불러오지 못했습니다. 인쇄 기능을 이용해 주세요.');return;}
+  const btn=document.getElementById('btnImg'),old=btn.textContent;
+  btn.textContent='생성 중…';btn.disabled=true;
+  html2canvas(node,{backgroundColor:'#f4efe6',scale:2}).then(canvas=>{
+    canvas.toBlob(b=>{
+      const a=document.createElement('a'),dt=document.getElementById('date').value||'saju';
+      a.href=URL.createObjectURL(b);a.download='사주_'+dt+'.png';a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+      btn.textContent=old;btn.disabled=false;
+    },'image/png');
+  }).catch(e=>{alert('이미지 생성 실패: '+e.message);btn.textContent=old;btn.disabled=false;});
+}
+// ══════════════════════════════════════════
+//  만세력 달력 · 간지 찾기 도구
+// ══════════════════════════════════════════
+const WD_JDN=['월','화','수','목','금','토','일']; // JDN%7: 0=월
+const pad2=(n)=>String(n).padStart(2,'0');
+// JDN -> 그레고리 날짜 (역변환)
+function fromJDN(jdn){
+  let a=jdn+32044, b=Math.floor((4*a+3)/146097), c=a-Math.floor(146097*b/4);
+  let d=Math.floor((4*c+3)/1461), e=c-Math.floor(1461*d/4), m=Math.floor((5*e+2)/153);
+  const day=e-Math.floor((153*m+2)/5)+1, month=m+3-12*Math.floor(m/10), year=100*b+d-4800+Math.floor(m/10);
+  return {year,month,day};
+}
+const dateStrOf=(y,m,d)=>y+'-'+pad2(m)+'-'+pad2(d);
+
+// 60갑자 select 채우기
+(function(){const sel=document.getElementById('calGanji');
+  for(let i=0;i<60;i++){const o=document.createElement('option');o.value=i;
+    o.textContent=hanjaPillar(i)+' '+hangulPillar(i)+'일';sel.appendChild(o);}})();
+
+function ganjiCell(label,id){
+  const ge=EL_NAME[GAN_EL[id%10]], je=EL_NAME[JI_EL[id%12]];
+  return '<div class="col"><h3>'+label+'</h3>'
+    +'<div class="glyph bg-'+ge+' el-'+ge+'">'+GAN_H[id%10]+'</div>'
+    +'<div class="glyph bg-'+je+' el-'+je+'">'+JI_H[id%12]+'</div>'
+    +'<div class="kor">'+hangulPillar(id)+'</div></div>';
+}
+// 날짜 → 간지
+function calD2G(){
+  const dateStr=document.getElementById('calDate').value;
+  const out=document.getElementById('calD2GOut');
+  if(!dateStr||dateStr<WEB_DATA.minDate||dateStr>WEB_DATA.maxDate){
+    out.innerHTML='<div class="err" style="margin-top:8px">지원 범위(1900~2050)를 벗어났습니다.</div>';return;}
+  const [Y,M,D]=dateStr.split('-').map(Number);
+  const jdn=toJDN(Y,M,D);
+  const dayId=((jdn+WEB_DATA.dayPillarOffset)%60+60)%60;
+  const yearId=lookupChange(WEB_DATA.yearChanges,dateStr);
+  const monId=lookupChange(WEB_DATA.monthChanges,dateStr);
+  const L=lookupLunar(dateStr);
+  let h='<div class="meta" style="margin-top:12px">'
+    +'<span>양력 <b>'+dateStr+' ('+WD_JDN[((jdn%7)+7)%7]+')</b></span>'
+    +'<span>음력 <b>'+L.year+'.'+pad2(L.month)+'.'+pad2(L.day)+(L.leap?' (윤달)':'')+'</b></span>'
+    +'<span>띠 <b>'+ANIMAL[yearId%12]+'띠</b></span></div>';
+  h+='<div class="pillars" style="grid-template-columns:repeat(3,1fr);max-width:380px;margin:0 auto">'
+    +ganjiCell('년주',yearId)+ganjiCell('월주',monId)+ganjiCell('일주',dayId)+'</div>';
+  out.innerHTML=h;
+}
+// 간지 → 날짜 (생일찾기)
+function calG2D(){
+  const T=+document.getElementById('calGanji').value;
+  let fromY=+document.getElementById('calFromY').value, toY=+document.getElementById('calToY').value;
+  const out=document.getElementById('calG2DOut');
+  if(fromY>toY){const t=fromY;fromY=toY;toY=t;}
+  fromY=Math.max(1900,fromY); toY=Math.min(2050,toY);
+  const startJDN=toJDN(fromY,1,1), endJDN=toJDN(toY,12,31);
+  const off=WEB_DATA.dayPillarOffset;
+  let jdn=startJDN+(((T-((startJDN+off)%60))%60+60)%60); // 범위 내 첫 일치일
+  const rows=[]; const CAP=500;
+  for(;jdn<=endJDN;jdn+=60){
+    const g=fromJDN(jdn), ds=dateStrOf(g.year,g.month,g.day), L=lookupLunar(ds);
+    rows.push('<tr><td>'+ds+' ('+WD_JDN[((jdn%7)+7)%7]+')</td>'
+      +'<td>음 '+L.year+'.'+pad2(L.month)+'.'+pad2(L.day)+(L.leap?' 윤':'')+'</td></tr>');
+    if(rows.length>=CAP)break;
+  }
+  if(!rows.length){out.innerHTML='<div class="note" style="margin-top:8px">해당 기간에 결과가 없습니다.</div>';return;}
+  out.innerHTML='<div style="margin-top:10px"><b>'+hanjaPillar(T)+' '+hangulPillar(T)+'일</b> — '
+    +fromY+'~'+toY+'년 '+rows.length+'건'+(rows.length>=CAP?' (최대 '+CAP+'건 표시)':'')+'</div>'
+    +'<table style="margin-top:6px"><tr><th>양력</th><th>음력</th></tr>'+rows.join('')+'</table>';
+}
+document.getElementById('calModeSeg').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  [...e.currentTarget.children].forEach(b=>b.classList.remove('on'));e.target.classList.add('on');
+  const m=e.target.dataset.m;
+  document.getElementById('calD2G').style.display=(m==='d2g')?'':'none';
+  document.getElementById('calG2D').style.display=(m==='g2d')?'':'none';
+});
+document.getElementById('calGoD2G').addEventListener('click',calD2G);
+document.getElementById('calGoG2D').addEventListener('click',calG2D);
+
+// ── 시간 보정 UI 배선 ──
+(function(){
+  const sel=document.getElementById('citySel');
+  for(const [name,lon] of CITIES){const o=document.createElement('option');
+    o.value=name;o.dataset.lon=lon;o.textContent=name+' ('+lon.toFixed(2)+'°E)';sel.appendChild(o);}
+  const dc=document.createElement('option');dc.value='직접입력';dc.textContent='직접 입력…';sel.appendChild(dc);
+})();
+function syncCorrUI(){
+  const mode=document.getElementById('corrMode').value;
+  const isJin=(mode==='jintaeyang');
+  const cs=document.getElementById('citySel');
+  document.getElementById('cityField').style.display=isJin?'':'none';
+  document.getElementById('lonField').style.display=(isJin&&cs.value==='직접입력')?'':'none';
+}
+document.getElementById('corrMode').addEventListener('change',syncCorrUI);
+document.getElementById('citySel').addEventListener('change',syncCorrUI);
+syncCorrUI();
+
+compute();
+</script>
+</body>
+</html>
