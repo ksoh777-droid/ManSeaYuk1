@@ -143,6 +143,9 @@
       <div class="field"><label>저장된 입력 불러오기</label>
         <select id="profileSel"><option value="">— 저장된 입력 없음 —</option></select></div>
       <button class="tool" id="btnDelProfile">🗑 삭제</button>
+      <button class="tool" id="btnExportProfiles">📤 내보내기</button>
+      <button class="tool" id="btnImportProfiles">📥 가져오기</button>
+      <input type="file" id="importFile" accept="application/json,.json" style="display:none">
       <span class="note" id="profileMsg" style="align-self:center;margin:0"></span>
     </div>
     <div class="note">※ <b>진태양시</b>: 출생지 경도·균시차·과거 표준시(127.5°E)·서머타임을 자동 반영합니다. <b>자시 처리</b> — 야자시설(자정에 일주 변경) / 정자시설(23시에 일주 변경). 절입일 당일 출생은 시각에 따라 결과가 달라질 수 있습니다.<br>※ <b>입력 저장</b>은 이 브라우저에만 저장됩니다(서버 전송 없음). 다른 기기·브라우저에서는 보이지 않으며, 브라우저 데이터를 지우면 사라집니다.</div>
@@ -1495,6 +1498,49 @@ document.getElementById('btnDelProfile').addEventListener('click',()=>{
   if(!confirm('"'+name+'" 저장 입력을 삭제할까요?'))return;
   const profs=loadProfiles();delete profs[name];
   if(storeProfiles(profs)){refreshProfileList();profileFlash('"'+name+'" 삭제됨.');}
+});
+// 내보내기: 저장된 전체 입력을 JSON 파일로 다운로드
+document.getElementById('btnExportProfiles').addEventListener('click',()=>{
+  const profs=loadProfiles(),names=Object.keys(profs);
+  if(!names.length){profileFlash('내보낼 저장 입력이 없습니다.');return;}
+  const payload={app:'만세력-사주',type:'saju-profiles',version:1,exportedAt:new Date().toISOString(),profiles:profs};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='사주_입력백업_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  profileFlash(names.length+'건 내보냈습니다.');
+});
+// 가져오기: JSON 파일 선택 → 기존에 병합(이름 충돌 시 확인)
+document.getElementById('btnImportProfiles').addEventListener('click',()=>{
+  document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change',e=>{
+  const file=e.target.files&&e.target.files[0];
+  e.target.value='';                      // 같은 파일 재선택 허용
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    let data;
+    try{data=JSON.parse(ev.target.result);}
+    catch(err){profileFlash('가져오기 실패: JSON 형식이 아닙니다.');return;}
+    // 백업 파일(profiles 래핑) 또는 순수 {이름:상태} 객체 모두 허용
+    const incoming=(data&&typeof data==='object'&&data.profiles&&typeof data.profiles==='object')?data.profiles:data;
+    if(!incoming||typeof incoming!=='object'||Array.isArray(incoming)){profileFlash('가져오기 실패: 인식할 수 없는 파일입니다.');return;}
+    const keys=Object.keys(incoming).filter(k=>incoming[k]&&typeof incoming[k]==='object'&&incoming[k].date);
+    if(!keys.length){profileFlash('가져오기 실패: 저장 입력이 없습니다.');return;}
+    const profs=loadProfiles();
+    const dup=keys.filter(k=>profs[k]);
+    let overwrite=true;
+    if(dup.length)overwrite=confirm('같은 이름 '+dup.length+'건이 이미 있습니다.\n확인=덮어쓰기 / 취소=기존 유지(새 이름만 추가)');
+    let added=0,updated=0;
+    for(const k of keys){
+      if(profs[k]){ if(overwrite){profs[k]=incoming[k];updated++;} }
+      else{profs[k]=incoming[k];added++;}
+    }
+    if(storeProfiles(profs)){refreshProfileList();profileFlash('가져오기 완료: 추가 '+added+'건, 갱신 '+updated+'건.');}
+  };
+  reader.onerror=()=>profileFlash('파일을 읽지 못했습니다.');
+  reader.readAsText(file);
 });
 refreshProfileList();
 
