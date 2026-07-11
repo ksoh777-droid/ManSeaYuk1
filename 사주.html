@@ -83,6 +83,13 @@
   .gloss-tbl th,.gloss-tbl td{border:1px solid var(--line);padding:6px 10px;text-align:center;white-space:nowrap}
   .gloss-tbl th{background:#faf6ee;color:var(--sub);font-weight:600}
   .gloss-tbl td:first-child{background:#faf6ee;color:var(--sub);font-weight:600}
+  .gloss-toc{background:#faf6ee;border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:4px 0 16px;font-size:.92rem}
+  .gloss-toc b{color:var(--accent)}
+  .gloss-toc ol{margin:.4em 0 0;padding-left:1.4em;line-height:1.95}
+  .gloss-toc a{color:var(--accent);text-decoration:none;font-weight:600}
+  .gloss-toc a:hover{text-decoration:underline}
+  .gloss-grp{margin:24px 0 8px;font-size:1.1rem;color:var(--accent);border-bottom:2px solid var(--accent2);padding-bottom:5px;scroll-margin-top:12px}
+  .gloss-grp:first-of-type{margin-top:6px}
   .err{color:var(--accent);font-weight:600}
   .dir{display:inline-block;background:var(--accent2);color:#fff;border-radius:6px;padding:1px 8px;font-size:.8rem}
   /* 일진 달력 */
@@ -219,12 +226,23 @@
 
   <div id="result"></div>
 
-  <!-- ── 용어 설명 (음양·오행·십성/식신) ── -->
+  <!-- ── 사주 용어 사전 (통합) ── -->
   <div class="card no-print">
     <details id="glossary">
-      <summary class="detail-sum">📚 사주 용어 설명 — 음양 · 오행 · 식신 ▾</summary>
+      <summary class="detail-sum">📚 사주 용어 사전 ▾</summary>
       <div class="gloss">
+        <nav class="gloss-toc">
+          <b>📑 목차</b>
+          <ol>
+            <li><a href="#g1">기초 개념</a> — 음양 · 오행 · 십성/식신</li>
+            <li><a href="#g2">대운(大運) 읽는 법</a> — 10년 주기</li>
+            <li><a href="#g3">세운 · 격국 · 용신</a></li>
+            <li><a href="#g4">신살 · 십이운성 · 납음오행</a></li>
+            <li><a href="#g5">지장간 · 공망 · 명궁</a></li>
+          </ol>
+        </nav>
 
+        <h3 class="gloss-grp" id="g1">1. 기초 개념 — 음양 · 오행 · 십성/식신</h3>
         <h4>☯ 음양(陰陽)</h4>
         <p>우주 만물을 이루는 상대적인 두 기운입니다. <b>양(陽)</b>은 밝음·움직임·확산·강함(하늘·낮·남성적), <b>음(陰)</b>은 어둠·고요함·수렴·부드러움(땅·밤·여성적)을 뜻합니다. 서로 대립이 아니라 <b>상호보완하며 끊임없이 순환</b>하는 관계입니다.</p>
         <p>사주의 천간·지지도 모두 음·양으로 나뉩니다. 예를 들어 <b>갑(甲)</b>은 양목, <b>을(乙)</b>은 음목입니다. 대운이 순행/역행하는 방향도 태어난 해 천간의 음양과 성별로 정해집니다.</p>
@@ -260,17 +278,7 @@
           <li><b>주의</b> — 지나치면 안일·게으름으로 흐를 수 있습니다. 한편 식신은 나를 강하게 극하는 편관(칠살)을 눌러 다스리는 <b>식신제살(食神制殺)</b>의 역할도 합니다.</li>
         </ul>
 
-        <div class="note">※ 명리학의 기본 개념을 쉽게 요약한 것으로, 학파·문헌에 따라 세부 해석은 다를 수 있습니다. 오락·참고용입니다.</div>
-      </div>
-    </details>
-  </div>
-
-  <!-- ── 대운 읽는 법 ── -->
-  <div class="card no-print">
-    <details id="daeunGuide">
-      <summary class="detail-sum">🧭 대운(大運) 읽는 법 — 10년 주기 ▾</summary>
-      <div class="gloss">
-
+        <h3 class="gloss-grp" id="g2">2. 대운(大運) 읽는 법 — 10년 주기</h3>
         <h4>1. 대운이란?</h4>
         <p>대운은 <b>인생을 10년 단위로 나눈 큰 흐름</b>입니다. 사주 원국(태어날 때 정해진 네 기둥)이 ‘타고난 지형’이라면, 대운은 그 위로 <b>10년마다 바뀌며 지나가는 계절·날씨</b>에 해당합니다. 원국이 좋아도 대운이 거스르면 고전하고, 원국이 부족해도 좋은 대운을 만나면 크게 풀린다고 보아 <b>“원국 반, 운(運) 반”</b>이라 할 만큼 비중이 큽니다.</p>
 
@@ -298,17 +306,9 @@
         <h4>5. 대운 vs 세운(歲運)</h4>
         <p>대운(10년)이 그 시기의 <b>큰 계절·배경</b>이라면, 세운(1년)은 그 계절 안의 <b>그해 날씨</b>입니다. 그 아래 월운·일진까지 층층이 겹쳐 최종 길흉을 봅니다. 대운이 좋아도 특정 해 세운이 충을 일으키면 그해는 출렁일 수 있습니다.</p>
 
-        <div class="note">※ 앱에서는 조회 후 <b>‘대운 · 10년 주기’ 표</b>(나이·간지·천간십성·지지십성)와 <b>상세 해설 6번 ‘대운의 흐름’</b>에서 현재 대운을 확인할 수 있습니다. 해석은 학파·문헌에 따라 다를 수 있으며 오락·참고용입니다.</div>
-      </div>
-    </details>
-  </div>
+        <p class="gsub">앱에서는 조회 후 ‘대운 · 10년 주기’ 표(나이·간지·천간십성·지지십성)와 상세 해설 6번 ‘대운의 흐름’에서 현재 대운을 확인할 수 있습니다.</p>
 
-  <!-- ── 사주 심화 (세운·격국·용신) ── -->
-  <div class="card no-print">
-    <details id="advanced">
-      <summary class="detail-sum">📖 사주 심화 — 세운 · 격국 · 용신 ▾</summary>
-      <div class="gloss">
-
+        <h3 class="gloss-grp" id="g3">3. 세운 · 격국 · 용신</h3>
         <h4>🗓 세운(歲運) — 한 해의 운</h4>
         <p>세운은 <b>그 해의 간지가 내 사주·대운과 맺는 관계</b>로 보는 <b>1년 단위의 운</b>입니다. 대운이 10년의 큰 계절이라면, 세운은 그 계절 안의 <b>‘그해 날씨’</b>입니다. 흔히 말하는 신년운세·연운이 이 세운을 봅니다.</p>
         <ul class="gloss-list">
@@ -334,17 +334,9 @@
           <li><b>희신·기신</b> — 용신을 돕는 기운이 <b>희신</b>, 해치는 기운이 <b>기신</b>. 대운·세운이 <b>용신·희신운</b>이면 발전, <b>기신운</b>이면 조심할 시기입니다.</li>
         </ul>
 
-        <div class="note">※ 격국·용신은 학파(자평·궁통보감 등)에 따라 잡는 방법이 달라 결과가 갈릴 수 있습니다. 앱의 격국·용신은 억부법+조후를 위주로 한 간이 판정이며, 오락·참고용입니다.</div>
-      </div>
-    </details>
-  </div>
+        <p class="gsub">격국·용신은 학파(자평·궁통보감 등)에 따라 잡는 방법이 달라 결과가 갈릴 수 있습니다. 앱은 억부법+조후 위주의 간이 판정입니다.</p>
 
-  <!-- ── 사주 심화 II (신살·십이운성·납음오행) ── -->
-  <div class="card no-print">
-    <details id="extras">
-      <summary class="detail-sum">🔮 사주 심화 II — 신살 · 십이운성 · 납음오행 ▾</summary>
-      <div class="gloss">
-
+        <h3 class="gloss-grp" id="g4">4. 신살 · 십이운성 · 납음오행</h3>
         <h4>✨ 신살(神殺) — 길흉의 별</h4>
         <p>신살은 특정 간지 조합에서 나타나는 <b>길(吉)하거나 흉(凶)한 작용을 하는 상징적인 별</b>입니다. 사주의 뼈대(오행·십성)를 보조해 성향과 사건의 색채를 더해 주는 요소로, 하나하나에 얽매이기보다 <b>전체 균형 속에서 참고</b>하는 것이 좋습니다.</p>
         <ul class="gloss-list">
@@ -368,17 +360,9 @@
           <li><b>본명(本命)</b> — 특히 태어난 해(년주)의 납음을 <b>본명납음</b>이라 하여 그 사람을 상징하는 기운으로 봅니다. (예: 해중금 사주)</li>
         </ul>
 
-        <div class="note">※ 신살·납음은 학파에 따라 채택 범위와 해석이 크게 다릅니다. 특히 신살은 지나치게 흉으로 몰아 해석하지 않는 것이 좋습니다. 앱의 표시는 간이 정리이며 오락·참고용입니다.</div>
-      </div>
-    </details>
-  </div>
+        <p class="gsub">신살은 지나치게 흉으로 몰아 해석하지 않는 것이 좋습니다. 신살·납음은 학파에 따라 채택 범위와 해석이 크게 다릅니다.</p>
 
-  <!-- ── 사주 심화 III (지장간·공망·명궁) ── -->
-  <div class="card no-print">
-    <details id="hidden">
-      <summary class="detail-sum">🗝 사주 심화 III — 지장간 · 공망 · 명궁 ▾</summary>
-      <div class="gloss">
-
+        <h3 class="gloss-grp" id="g5">5. 지장간 · 공망 · 명궁</h3>
         <h4>🌰 지장간(支藏干) — 지지 속에 숨은 천간</h4>
         <p>지장간은 <b>각 지지(地支) 안에 감춰진 천간</b>입니다. 지지는 겉으로 드러난 오행 외에, 그 속에 2~3개의 천간을 품고 있습니다. 이 숨은 천간이 <b>천간에 드러나면(투출) 격국·용신을 정하는 핵심 근거</b>가 됩니다.</p>
         <ul class="gloss-list">
@@ -407,7 +391,8 @@
           <li><b>시각이 필요</b> — 시지가 있어야 산출되므로, <b>태어난 시각을 모르면 명궁은 나오지 않습니다.</b></li>
         </ul>
 
-        <div class="note">※ 지장간의 장간 수·비율, 공망의 적용 기준, 명궁 산출법은 학파·문헌에 따라 조금씩 다릅니다. 앱의 표시는 간이 정리이며 오락·참고용입니다.</div>
+        <div class="note">※ 이 용어 사전은 명리학 개념을 쉽게 요약한 것으로, 학파·문헌(자평·궁통보감 등)에 따라 세부 해석이 다를 수 있습니다. 앱의 각종 판정은 간이 계산이며, 전체가 <b>오락·참고용</b>입니다.</div>
+        <p class="gsub" style="margin-top:6px"><a href="#g1" style="color:var(--accent);text-decoration:none">▲ 목차로</a></p>
       </div>
     </details>
   </div>
