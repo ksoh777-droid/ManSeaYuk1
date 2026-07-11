@@ -71,6 +71,18 @@
   .detail h4{margin:14px 0 4px;font-size:.98rem;color:var(--ink);border-left:3px solid var(--accent2);padding-left:8px}
   .detail p{margin:.2em 0;line-height:1.85;font-size:.95rem}
   .note{font-size:.8rem;color:var(--sub);margin-top:8px}
+  .gloss{margin-top:12px}
+  .gloss h4{margin:18px 0 6px;font-size:1.02rem;color:var(--accent);border-left:3px solid var(--accent2);padding-left:8px}
+  .gloss h4:first-child{margin-top:4px}
+  .gloss p{margin:.35em 0;line-height:1.8;font-size:.95rem}
+  .gloss-list{margin:.4em 0;padding-left:1.25em;line-height:1.75;font-size:.94rem}
+  .gloss-list li{margin:.25em 0}
+  .gsub{color:var(--sub);font-size:.88em}
+  .gloss-tbl-wrap{overflow-x:auto;margin:8px 0}
+  .gloss-tbl{border-collapse:collapse;font-size:.9rem;min-width:420px}
+  .gloss-tbl th,.gloss-tbl td{border:1px solid var(--line);padding:6px 10px;text-align:center;white-space:nowrap}
+  .gloss-tbl th{background:#faf6ee;color:var(--sub);font-weight:600}
+  .gloss-tbl td:first-child{background:#faf6ee;color:var(--sub);font-weight:600}
   .err{color:var(--accent);font-weight:600}
   .dir{display:inline-block;background:var(--accent2);color:#fff;border-radius:6px;padding:1px 8px;font-size:.8rem}
   /* 일진 달력 */
@@ -206,6 +218,52 @@
   </div>
 
   <div id="result"></div>
+
+  <!-- ── 용어 설명 (음양·오행·십성/식신) ── -->
+  <div class="card no-print">
+    <details id="glossary">
+      <summary class="detail-sum">📚 사주 용어 설명 — 음양 · 오행 · 식신 ▾</summary>
+      <div class="gloss">
+
+        <h4>☯ 음양(陰陽)</h4>
+        <p>우주 만물을 이루는 상대적인 두 기운입니다. <b>양(陽)</b>은 밝음·움직임·확산·강함(하늘·낮·남성적), <b>음(陰)</b>은 어둠·고요함·수렴·부드러움(땅·밤·여성적)을 뜻합니다. 서로 대립이 아니라 <b>상호보완하며 끊임없이 순환</b>하는 관계입니다.</p>
+        <p>사주의 천간·지지도 모두 음·양으로 나뉩니다. 예를 들어 <b>갑(甲)</b>은 양목, <b>을(乙)</b>은 음목입니다. 대운이 순행/역행하는 방향도 태어난 해 천간의 음양과 성별로 정해집니다.</p>
+
+        <h4>🌳 오행(五行)</h4>
+        <p><b>목(木)·화(火)·토(土)·금(金)·수(水)</b> 다섯 가지 기운으로 만물의 성질과 변화를 설명합니다. 사주는 이 다섯 기운이 <b>얼마나 고르게 갖춰졌는지(균형·과부족)</b>를 보아 신강·신약과 용신(중심 기운)을 판단합니다.</p>
+        <ul class="gloss-list">
+          <li><b>상생(相生)</b> — 서로 낳고 북돋우는 관계: 목→화→토→금→수→목 <span class="gsub">(나무가 불을, 불이 흙을, 흙이 쇠를, 쇠가 물을, 물이 나무를 낳음)</span></li>
+          <li><b>상극(相剋)</b> — 서로 제어하는 관계: 목→토→수→화→금→목 <span class="gsub">(나무가 흙을, 흙이 물을, 물이 불을, 불이 쇠를, 쇠가 나무를 이김)</span></li>
+        </ul>
+        <div class="gloss-tbl-wrap"><table class="gloss-tbl">
+          <tr><th>오행</th><th>목 木</th><th>화 火</th><th>토 土</th><th>금 金</th><th>수 水</th></tr>
+          <tr><td>천간</td><td>갑·을</td><td>병·정</td><td>무·기</td><td>경·신</td><td>임·계</td></tr>
+          <tr><td>계절</td><td>봄</td><td>여름</td><td>환절기</td><td>가을</td><td>겨울</td></tr>
+          <tr><td>오장</td><td>간</td><td>심장</td><td>비위</td><td>폐</td><td>신장</td></tr>
+          <tr><td>성질</td><td>인·성장</td><td>예·발산</td><td>신·중용</td><td>의·결단</td><td>지·저장</td></tr>
+        </table></div>
+
+        <h4>⭐ 십성(十星)과 식신(食神)</h4>
+        <p><b>십성</b>은 나 자신을 뜻하는 <b>일간(日干)</b>을 기준으로, 사주의 다른 글자들이 나와 맺는 오행·음양 관계를 10가지로 나눈 것입니다. 성격·재물·직업·인간관계를 읽는 핵심 도구이며 다섯 계열로 묶입니다.</p>
+        <ul class="gloss-list">
+          <li><b>비겁</b>(비견·겁재) — 나와 같은 오행. 자아·경쟁·동료·독립</li>
+          <li><b>식상</b>(<b>식신</b>·상관) — 내가 낳는(생하는) 오행. 표현·재능·활동</li>
+          <li><b>재성</b>(편재·정재) — 내가 이기는(극하는) 오행. 재물·현실·결과</li>
+          <li><b>관성</b>(편관·정관) — 나를 이기는 오행. 명예·직장·통제·책임</li>
+          <li><b>인성</b>(편인·정인) — 나를 낳는 오행. 학문·수용·보살핌</li>
+        </ul>
+        <p><b>식신(食神)</b>은 <b>일간이 생(生)하는 오행이면서 음양이 같은</b> 십성입니다. 즉 <b>내가 만들어내고 베푸는 기운</b>이지요. <span class="gsub">(예: 갑목 일간은 화를 생하는데, 그중 양화인 병화가 식신, 음화인 정화는 상관)</span></p>
+        <ul class="gloss-list">
+          <li><b>의미</b> — 표현력·창의력·재능, 그리고 흔히 <b>‘먹을 복’·여유·낙천</b>으로 풀이합니다. 의식주가 풍족하고 성품이 온화한 편입니다.</li>
+          <li><b>성향</b> — 꾸준하고 순수하게 무언가를 만들고 표현합니다. 요리·예술·교육·언변·기획 등에 강점이 있습니다.</li>
+          <li><b>상관과의 차이</b> — 식신은 <b>안정적·순수·꾸준함</b>, 상관은 <b>화려함·변화·비판적 표현</b>이 특징입니다.</li>
+          <li><b>주의</b> — 지나치면 안일·게으름으로 흐를 수 있습니다. 한편 식신은 나를 강하게 극하는 편관(칠살)을 눌러 다스리는 <b>식신제살(食神制殺)</b>의 역할도 합니다.</li>
+        </ul>
+
+        <div class="note">※ 명리학의 기본 개념을 쉽게 요약한 것으로, 학파·문헌에 따라 세부 해석은 다를 수 있습니다. 오락·참고용입니다.</div>
+      </div>
+    </details>
+  </div>
 </div>
 
 <script>
