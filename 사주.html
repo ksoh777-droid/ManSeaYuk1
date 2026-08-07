@@ -137,6 +137,8 @@
   .apphead .authArea .tool:hover{background:rgba(38,26,18,.75)}
   .apphead .authArea .btn-naver{background:#03c75a;border-color:#04b152;color:#fff}
   .apphead .authArea .btn-naver:hover{background:#04b152}
+  .apphead .authArea .btn-kakao{background:#fee500;border-color:#f2d900;color:#3c1e1e}
+  .apphead .authArea .btn-kakao:hover{background:#f7dc00}
   .apphead #userBadge{background:rgba(255,253,248,.88);padding:4px 6px 4px 10px;border-radius:999px;
     box-shadow:0 3px 12px -2px rgba(0,0,0,.35)}
   .apphead #userBadge b{color:#2b2420;font-weight:700}
@@ -183,6 +185,9 @@
         <button class="tool" id="btnLogin">🔐 구글로 로그인</button>
         <button class="tool btn-naver" id="btnNaverLogin">
           <svg width="15" height="15" viewBox="0 0 20 20" aria-hidden="true" style="vertical-align:-2px;margin-right:2px"><rect width="20" height="20" rx="3" fill="#fff"/><path d="M5.4 5h3l3.1 4.7V5h3.1v10h-3l-3.1-4.7V15H5.4z" fill="#03c75a"/></svg>네이버 로그인
+        </button>
+        <button class="tool btn-kakao" id="btnKakaoLogin">
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="vertical-align:-3px;margin-right:2px"><path d="M12 3.6c-5 0-9 3.14-9 7 0 2.5 1.7 4.7 4.2 5.94-.16.57-.9 3.14-.94 3.35 0 0-.02.15.08.21.1.06.22 0 .22 0 .28-.04 3.27-2.15 3.83-2.52.53.07 1.06.11 1.61.11 5 0 9-3.14 9-7s-4-7.99-9-7.09z" fill="#3c1e1e"/></svg>카카오 로그인
         </button>
       </span>
       <span id="userBadge" style="display:none;align-items:center;gap:8px">
@@ -1889,6 +1894,11 @@ if(btnNaverLogin) btnNaverLogin.addEventListener('click',()=>{
   if(window.SajuNaver) window.SajuNaver.login();
   else profileFlash('로그인 모듈을 불러오는 중입니다. 잠시 후 다시 시도하세요.');
 });
+const btnKakaoLogin=document.getElementById('btnKakaoLogin');
+if(btnKakaoLogin) btnKakaoLogin.addEventListener('click',()=>{
+  if(window.SajuKakao) window.SajuKakao.login();
+  else profileFlash('로그인 모듈을 불러오는 중입니다. 잠시 후 다시 시도하세요.');
+});
 
 // 관리자 페이지 링크를 노출할 계정 (admin.html 함수의 ADMIN_EMAILS와 동일해야 함)
 const ADMIN_EMAILS=['ksoh777@gmail.com'];
@@ -1971,6 +1981,12 @@ const firebaseConfig = {
 const NAVER_CLIENT_ID = "FeTGKR5VotTlnQE8cq4t";
 const NAVER_REDIRECT_URI = "https://asia-northeast3-manseayuk.cloudfunctions.net/naverCallback";
 
+// ── 카카오 로그인 설정 ──
+// KAKAO_REST_API_KEY: 카카오 개발자 → 내 애플리케이션 → 앱 키 → REST API 키
+// KAKAO_REDIRECT_URI: 배포한 Cloud Function 주소 (카카오 앱의 Redirect URI 와 반드시 동일)
+const KAKAO_REST_API_KEY = "c6da27eec69688d105ea314b6c957986";
+const KAKAO_REDIRECT_URI = "https://asia-northeast3-manseayuk.cloudfunctions.net/kakaoCallback";
+
 const notConfigured = firebaseConfig.apiKey.startsWith('__PASTE');
 let auth=null, db=null, provider=null, uid=null;
 
@@ -2001,9 +2017,9 @@ window.SajuCloud={
   }
 };
 
-// ── 네아로(네이버 로그인) ──
-// 네이버 인가 페이지로 이동 → Cloud Function 이 커스텀 토큰을 만들어 사이트로 되돌려줌
-let naverProfileHint=null;  // 커스텀 토큰 사용자는 displayName 이 늦게 채워지므로 임시 보관
+// ── 소셜 로그인(네이버·카카오) ──
+// 인가 페이지로 이동 → Cloud Function 이 커스텀 토큰을 만들어 사이트로 되돌려줌
+let socialProfileHint=null;  // 커스텀 토큰 사용자는 displayName 이 늦게 채워지므로 임시 보관
 window.SajuNaver={
   login(){
     if(NAVER_CLIENT_ID.startsWith('__PASTE')){
@@ -2011,34 +2027,47 @@ window.SajuNaver={
       return;
     }
     const state='st_'+Math.random().toString(36).slice(2)+Date.now().toString(36);
-    const url='https://nid.naver.com/oauth2.0/authorize'
+    location.href='https://nid.naver.com/oauth2.0/authorize'
       +'?response_type=code'
       +'&client_id='+encodeURIComponent(NAVER_CLIENT_ID)
       +'&redirect_uri='+encodeURIComponent(NAVER_REDIRECT_URI)
       +'&state='+encodeURIComponent(state);
-    location.href=url;
+  }
+};
+window.SajuKakao={
+  login(){
+    if(KAKAO_REST_API_KEY.startsWith('__PASTE')){
+      alert('카카오 로그인이 아직 설정되지 않았습니다.\n(관리자: KAKAO_REST_API_KEY 입력 및 Cloud Function 배포 필요)');
+      return;
+    }
+    location.href='https://kauth.kakao.com/oauth/authorize'
+      +'?response_type=code'
+      +'&client_id='+encodeURIComponent(KAKAO_REST_API_KEY)
+      +'&redirect_uri='+encodeURIComponent(KAKAO_REDIRECT_URI);
   }
 };
 
-// Cloud Function 이 붙여 보낸 커스텀 토큰(#naver&token=...&name=...&photo=...) 처리
-async function handleNaverReturn(){
-  if(!location.hash || location.hash.indexOf('#naver')!==0) return;
-  const q=location.hash.slice(location.hash.indexOf('&')+1);
-  const params=new URLSearchParams(q);
+// Cloud Function 이 붙여 보낸 커스텀 토큰(#naver&... 또는 #kakao&...) 처리
+async function handleSocialReturn(){
+  const h=location.hash||'';
+  const isNaver=h.indexOf('#naver')===0, isKakao=h.indexOf('#kakao')===0;
+  if(!isNaver && !isKakao) return;
+  const label=isKakao?'카카오':'네이버';
+  const params=new URLSearchParams(h.slice(h.indexOf('&')+1));
   const token=params.get('token');
   const name=params.get('name')||'';
   const photo=params.get('photo')||'';
   const err=params.get('error');
   history.replaceState(null,'',location.pathname+location.search); // URL에서 토큰 흔적 제거
-  if(err){ alert('네이버 로그인 취소/오류: '+err); return; }
+  if(err){ alert(label+' 로그인 취소/오류: '+err); return; }
   if(!token) return;
-  naverProfileHint={ name, photo };
+  socialProfileHint={ name, photo };
   try{
     await signInWithCustomToken(auth, token);
     if(auth.currentUser){
       try{ await updateProfile(auth.currentUser,{ displayName:name||null, photoURL:photo||null }); }catch(_){}
     }
-  }catch(e){ console.error('네이버 로그인 실패', e); alert('네이버 로그인 처리 실패: '+((e&&e.message)||e)); }
+  }catch(e){ console.error(label+' 로그인 실패', e); alert(label+' 로그인 처리 실패: '+((e&&e.message)||e)); }
 }
 
 if(auth){
@@ -2050,18 +2079,18 @@ if(auth){
         const snap=await getDoc(userDoc());
         if(snap.exists()) remote=snap.data().profiles||{};
       }catch(e){ console.error('클라우드 프로필 로드 실패', e); }
-      // 네이버(커스텀 토큰) 사용자는 displayName/photoURL 이 늦거나 비어 있을 수 있어 폴백 적용
-      const dispName=user.displayName||(naverProfileHint&&naverProfileHint.name)||user.email;
-      const dispPhoto=user.photoURL||(naverProfileHint&&naverProfileHint.photo)||'';
+      // 소셜(커스텀 토큰) 사용자는 displayName/photoURL 이 늦거나 비어 있을 수 있어 폴백 적용
+      const dispName=user.displayName||(socialProfileHint&&socialProfileHint.name)||user.email;
+      const dispPhoto=user.photoURL||(socialProfileHint&&socialProfileHint.photo)||'';
       window.__cloud && window.__cloud.onAuth(
         { uid:user.uid, name:dispName, email:user.email, photo:dispPhoto }, remote);
     }else{
       uid=null;
-      naverProfileHint=null;
+      socialProfileHint=null;
       window.__cloud && window.__cloud.onAuth(null);
     }
   });
-  handleNaverReturn();  // 네이버 리다이렉트로 돌아온 경우 처리
+  handleSocialReturn();  // 네이버·카카오 리다이렉트로 돌아온 경우 처리
 }
 </script>
 </body>

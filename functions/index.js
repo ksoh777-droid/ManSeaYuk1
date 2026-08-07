@@ -86,6 +86,70 @@ exports.naverCallback = functions
   });
 
 // ══════════════════════════════════════════════════════════════
+//  카카오 로그인 → Firebase 커스텀 토큰 브리지 (네아로와 동일 구조)
+//   비밀값: functions/.env 의 KAKAO_REST_API_KEY / KAKAO_CLIENT_SECRET(선택)
+// ══════════════════════════════════════════════════════════════
+exports.kakaoCallback = functions
+  .region(REGION)
+  .https.onRequest(async (req, res) => {
+    const REST_KEY = process.env.KAKAO_REST_API_KEY;
+    const CLIENT_SECRET = process.env.KAKAO_CLIENT_SECRET; // 카카오 콘솔에서 '사용함'일 때만 필요
+    const REDIRECT_URI = 'https://asia-northeast3-manseayuk.cloudfunctions.net/kakaoCallback';
+    try {
+      if (!REST_KEY) { res.status(500).send('서버에 카카오 REST API 키가 설정되지 않았습니다.'); return; }
+      const code = req.query.code;
+      const kakaoError = req.query.error;
+      if (kakaoError) {
+        res.redirect(SITE + '#kakao&error=' + encodeURIComponent(req.query.error_description || kakaoError));
+        return;
+      }
+      if (!code) { res.status(400).send('인가코드(code)가 없습니다.'); return; }
+
+      // 1) 인가코드 → 접근토큰 (POST, form-urlencoded)
+      const form = new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: REST_KEY,
+        redirect_uri: REDIRECT_URI,
+        code: String(code)
+      });
+      if (CLIENT_SECRET) form.set('client_secret', CLIENT_SECRET);
+      const tokenResp = await fetch('https://kauth.kakao.com/oauth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
+        body: form.toString()
+      });
+      const tokenData = await tokenResp.json();
+      if (!tokenData.access_token) { res.status(400).send('접근토큰 발급 실패: ' + JSON.stringify(tokenData)); return; }
+
+      // 2) 프로필 조회
+      const meResp = await fetch('https://kapi.kakao.com/v2/user/me', {
+        headers: { Authorization: 'Bearer ' + tokenData.access_token }
+      });
+      const me = await meResp.json();
+      if (!me.id) { res.status(400).send('프로필 조회 실패: ' + JSON.stringify(me)); return; }
+      const acc = me.kakao_account || {};
+      const prof = acc.profile || {};
+      const uid = 'kakao:' + me.id;
+      const name = prof.nickname || '카카오 사용자';
+      const photo = prof.profile_image_url || '';
+
+      // 3) Firebase 커스텀 토큰 발급
+      const customToken = await admin.auth().createCustomToken(uid, {
+        provider: 'kakao',
+        name: name,
+        email: acc.email || '',
+        picture: photo
+      });
+
+      // 4) 사이트로 되돌리며 토큰 전달
+      const frag = new URLSearchParams({ token: customToken, name: name, photo: photo }).toString();
+      res.redirect(SITE + '#kakao&' + frag);
+    } catch (e) {
+      res.status(500).send('카카오 로그인 처리 오류: ' + ((e && e.message) || e));
+    }
+  });
+
+// ══════════════════════════════════════════════════════════════
 //  관리자 전용: 전체 회원 목록 + 저장 데이터 조회 (onCall)
 //   - 호출자의 Firebase 인증 토큰을 서버에서 검증하여 관리자만 허용
 //   - Admin SDK 로 Authentication 사용자 목록 + Firestore users 컬렉션을 합쳐 반환
@@ -107,13 +171,16 @@ exports.adminListMembers = functions
     do {
       const res = await admin.auth().listUsers(1000, pageToken);
       res.users.forEach((u) => {
-        const isNaver = u.uid.indexOf('naver:') === 0;
+        let prov;
+        if (u.uid.indexOf('naver:') === 0) prov = 'naver';
+        else if (u.uid.indexOf('kakao:') === 0) prov = 'kakao';
+        else prov = (u.providerData[0] && u.providerData[0].providerId) || 'unknown';
         members.push({
           uid: u.uid,
           email: u.email || '',
           name: u.displayName || '',
           photo: u.photoURL || '',
-          provider: isNaver ? 'naver' : ((u.providerData[0] && u.providerData[0].providerId) || 'unknown'),
+          provider: prov,
           created: u.metadata.creationTime || '',
           lastLogin: u.metadata.lastSignInTime || ''
         });

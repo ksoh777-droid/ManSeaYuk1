@@ -21,6 +21,7 @@
   .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;font-weight:700}
   .b-google{background:#e8f0fe;color:#1a56db}
   .b-naver{background:#e6f8ee;color:#03844a}
+  .b-kakao{background:#fef4c6;color:#7a5a00}
   .b-other{background:#eee;color:#555}
   .stat{display:flex;gap:20px;flex-wrap:wrap;margin:6px 0}
   .stat .n{font-size:1.6rem;font-weight:800;color:var(--accent)}
@@ -63,6 +64,7 @@
       <div><div class="n" id="cntTotal">0</div><div class="muted">전체 회원</div></div>
       <div><div class="n" id="cntGoogle">0</div><div class="muted">구글</div></div>
       <div><div class="n" id="cntNaver">0</div><div class="muted">네이버</div></div>
+      <div><div class="n" id="cntKakao">0</div><div class="muted">카카오</div></div>
       <div><div class="n" id="cntSaved">0</div><div class="muted">저장 데이터 보유</div></div>
     </div>
     <div class="tablewrap">
@@ -157,17 +159,19 @@ function avatar(m){
 }
 function provBadge(p){
   if(p==='naver') return '<span class="badge b-naver">네이버</span>';
+  if(p==='kakao') return '<span class="badge b-kakao">카카오</span>';
   if(p==='google.com') return '<span class="badge b-google">구글</span>';
   return '<span class="badge b-other">'+esc(p)+'</span>';
 }
 
 function render(d){
   const members = d.members||[];
-  let g=0,n=0,s=0;
-  members.forEach(m=>{ if(m.provider==='naver')n++; else if(m.provider==='google.com')g++; if(m.saved&&m.saved.count>0)s++; });
+  let g=0,n=0,k=0,s=0;
+  members.forEach(m=>{ if(m.provider==='naver')n++; else if(m.provider==='kakao')k++; else if(m.provider==='google.com')g++; if(m.saved&&m.saved.count>0)s++; });
   $('cntTotal').textContent=members.length;
   $('cntGoogle').textContent=g;
   $('cntNaver').textContent=n;
+  $('cntKakao').textContent=k;
   $('cntSaved').textContent=s;
 
   const tb=$('tbody'); tb.innerHTML='';
