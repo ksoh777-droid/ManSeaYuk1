@@ -115,19 +115,50 @@
   .aiout:empty{display:none}
   @media(max-width:560px){.glyph{font-size:1.9rem}.form{gap:8px}
     table.iljin td{height:44px;font-size:.8rem}table.iljin .ijg{font-size:.85rem}}
-  /* ── 헤더(로고+로그인) / 카드 제목 ── */
-  .apphead{position:relative;text-align:center;padding-top:18px}
-  .apphead .authArea{position:absolute;top:14px;right:16px;display:flex;align-items:center;gap:8px}
-  .brand{display:flex;flex-direction:column;align-items:center;gap:6px}
-  .brand h1{margin:.1em 0}
-  .brand .logo{filter:drop-shadow(0 1px 2px rgba(0,0,0,.15))}
+  /* ── 헤더(로고+로그인) — 프리미엄 히어로 ── */
+  .apphead{
+    position:relative;text-align:center;border:none;overflow:hidden;
+    padding:38px 22px 32px;border-radius:20px;
+    background:
+      radial-gradient(130% 120% at 50% -25%, rgba(184,134,11,.32), transparent 58%),
+      linear-gradient(160deg,#3a1414 0%,#5e1919 48%,#7d2020 100%);
+    box-shadow:0 16px 36px -16px rgba(70,15,15,.6);
+  }
+  .apphead::after{ /* 은은한 상단 하이라이트 라인 */
+    content:"";position:absolute;left:0;right:0;top:0;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);
+  }
+  .apphead .authArea{position:absolute;top:16px;right:16px;display:flex;align-items:center;gap:8px;z-index:2}
+  .apphead .authArea .tool{
+    background:rgba(255,255,255,.14);color:#fff9ef;
+    border:1px solid rgba(255,240,210,.42);border-radius:999px;
+    padding:8px 15px;font-weight:600;letter-spacing:.02em;
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+    box-shadow:0 2px 8px -2px rgba(0,0,0,.3);transition:background .15s;
+  }
+  .apphead .authArea .tool:hover{background:rgba(255,255,255,.26)}
+  .apphead .authArea b{color:#fff9ef;font-weight:600}
+  .brand{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;z-index:1}
+  .logo-wrap{
+    width:104px;height:104px;border-radius:50%;display:grid;place-items:center;margin-bottom:10px;
+    background:radial-gradient(circle at 36% 30%,#fffdf8,#efe0bd);
+    box-shadow:0 8px 22px -6px rgba(0,0,0,.55), 0 0 0 6px rgba(255,248,235,.06), inset 0 0 0 1px rgba(184,134,11,.55);
+  }
+  .logo-wrap .logo{filter:drop-shadow(0 2px 4px rgba(90,20,20,.25))}
+  .brand-title{
+    margin:6px 0 3px;font-family:"Nanum Myeongjo","Batang","바탕",serif;
+    font-size:2.05rem;font-weight:800;letter-spacing:.16em;color:#fff9ef;
+    text-shadow:0 2px 12px rgba(0,0,0,.4);
+  }
+  .brand-sub{margin:0;color:#ebcf9a;font-size:.78rem;letter-spacing:.03em;opacity:.92}
   .cardhead{font-weight:700;color:var(--accent);font-size:1.05rem;margin-bottom:14px;
     padding-bottom:8px;border-bottom:1px solid var(--line);letter-spacing:.02em}
   .cardhead-sub{font-weight:400;color:var(--sub);font-size:.85rem;margin-left:6px}
   #loginHint{color:var(--sub);font-size:.95rem}
   @media(max-width:560px){
-    .apphead{padding-top:8px}
-    .apphead .authArea{position:static;justify-content:center;margin-bottom:10px}
+    .apphead{padding:20px 16px 26px}
+    .apphead .authArea{position:static;justify-content:center;margin-bottom:14px}
+    .brand-title{font-size:1.7rem}
   }
 </style>
 <script>/*!
@@ -164,18 +195,20 @@
       </span>
     </div>
     <div class="brand">
-      <svg class="logo" viewBox="0 0 120 120" width="78" height="78" role="img" aria-label="만세력 사주 로고">
-        <defs><clipPath id="lg"><circle cx="60" cy="60" r="44"/></clipPath></defs>
-        <circle cx="60" cy="60" r="56" fill="none" stroke="#b8860b" stroke-width="3.5"/>
-        <circle cx="60" cy="60" r="49.5" fill="none" stroke="#b8860b" stroke-width="1" opacity=".5"/>
-        <g clip-path="url(#lg)">
-          <circle cx="60" cy="60" r="44" fill="#f3e6c4"/>
-          <path d="M60,16 A44,44 0 0,1 60,104 A22,22 0 0,1 60,60 A22,22 0 0,0 60,16 Z" fill="#8a1c1c"/>
-          <circle cx="60" cy="38" r="6" fill="#f3e6c4"/>
-          <circle cx="60" cy="82" r="6" fill="#8a1c1c"/>
-        </g>
-      </svg>
-      <h1>사주 조회 <small>萬歲曆 · 1900~2050 · 한국천문연구원(KASI) 기반</small></h1>
+      <div class="logo-wrap">
+        <svg class="logo" viewBox="0 0 120 120" width="74" height="74" role="img" aria-label="만세력 사주 로고">
+          <defs><clipPath id="lg"><circle cx="60" cy="60" r="46"/></clipPath></defs>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="#b8860b" stroke-width="3"/>
+          <g clip-path="url(#lg)">
+            <circle cx="60" cy="60" r="46" fill="#f6ead0"/>
+            <path d="M60,14 A46,46 0 0,1 60,106 A23,23 0 0,1 60,60 A23,23 0 0,0 60,14 Z" fill="#8a1c1c"/>
+            <circle cx="60" cy="37" r="6.5" fill="#f6ead0"/>
+            <circle cx="60" cy="83" r="6.5" fill="#8a1c1c"/>
+          </g>
+        </svg>
+      </div>
+      <h1 class="brand-title">사주 조회</h1>
+      <p class="brand-sub">萬歲曆 · 1900–2050 · 한국천문연구원(KASI) 기반</p>
     </div>
   </div>
 
