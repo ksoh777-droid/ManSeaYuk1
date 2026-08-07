@@ -1,0 +1,13 @@
+{
+  "name": "manseayuk-functions",
+  "description": "네아로(네이버 아이디로 로그인) → Firebase 커스텀 토큰 브리지",
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "private": true,
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^5.1.1"
+  }
+}

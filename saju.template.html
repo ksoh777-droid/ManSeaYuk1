@@ -137,6 +137,8 @@
     box-shadow:0 2px 8px -2px rgba(0,0,0,.3);transition:background .15s;
   }
   .apphead .authArea .tool:hover{background:rgba(255,255,255,.26)}
+  .apphead .authArea .btn-naver{background:#03c75a;border-color:#04b152;color:#fff}
+  .apphead .authArea .btn-naver:hover{background:#04b152}
   .apphead .authArea b{color:#fff9ef;font-weight:600}
   .brand{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;z-index:1}
   .logo-wrap{
@@ -168,7 +170,12 @@
   <!-- ── Block 1: 헤더 (로고 + 로그인) ── -->
   <div class="card apphead">
     <div class="authArea">
-      <button class="tool" id="btnLogin">🔐 구글로 로그인</button>
+      <span id="loginButtons" style="display:flex;gap:8px">
+        <button class="tool" id="btnLogin">🔐 구글로 로그인</button>
+        <button class="tool btn-naver" id="btnNaverLogin">
+          <svg width="15" height="15" viewBox="0 0 20 20" aria-hidden="true" style="vertical-align:-2px;margin-right:2px"><rect width="20" height="20" rx="3" fill="#fff"/><path d="M5.4 5h3l3.1 4.7V5h3.1v10h-3l-3.1-4.7V15H5.4z" fill="#03c75a"/></svg>네이버 로그인
+        </button>
+      </span>
       <span id="userBadge" style="display:none;align-items:center;gap:8px">
         <img id="userPhoto" alt="" style="width:28px;height:28px;border-radius:50%;vertical-align:middle;display:none">
         <b id="userName"></b>
@@ -1880,6 +1887,11 @@ if(btnLogin) btnLogin.addEventListener('click',()=>{
   }
 });
 if(btnLogout) btnLogout.addEventListener('click',()=>{ if(window.SajuCloud) window.SajuCloud.signOut(); });
+const btnNaverLogin=document.getElementById('btnNaverLogin');
+if(btnNaverLogin) btnNaverLogin.addEventListener('click',()=>{
+  if(window.SajuNaver) window.SajuNaver.login();
+  else profileFlash('로그인 모듈을 불러오는 중입니다. 잠시 후 다시 시도하세요.');
+});
 
 // 모듈 스크립트가 인증 상태 변화 시 호출하는 진입점
 window.__cloud={
@@ -1904,7 +1916,7 @@ window.__cloud={
       const ph=document.getElementById('userPhoto');
       if(user.photo){ ph.src=user.photo; ph.style.display=''; } else ph.style.display='none';
       badge.style.display='inline-flex';
-      if(btnLogin) btnLogin.style.display='none';
+      const lb=document.getElementById('loginButtons'); if(lb) lb.style.display='none';
       // 로그인 시에만 저장/불러오기 카드 표시
       const sc=document.getElementById('saveCard'); if(sc) sc.style.display='';
       const lh=document.getElementById('loginHint'); if(lh) lh.style.display='none';
@@ -1913,7 +1925,7 @@ window.__cloud={
       cloudUser=null;
       profilesCache=loadLocal();  // 로컬 모드로 복귀
       badge.style.display='none';
-      if(btnLogin) btnLogin.style.display='';
+      const lb=document.getElementById('loginButtons'); if(lb) lb.style.display='flex';
       // 로그아웃 시 저장/불러오기 카드 숨기고 안내 표시
       const sc=document.getElementById('saveCard'); if(sc) sc.style.display='none';
       const lh=document.getElementById('loginHint'); if(lh) lh.style.display='';
@@ -1934,7 +1946,7 @@ compute();
      ══════════════════════════════════════════════════════════════ -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence }
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, signInWithCustomToken, updateProfile }
   from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc }
   from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
@@ -1949,6 +1961,12 @@ const firebaseConfig = {
   appId: "1:1048869269083:web:a04fc662994c3e6ecbd97e"
 };
 // ▲▲▲ 여기까지 ▲▲▲
+
+// ── 네아로(네이버 아이디로 로그인) 설정 ──
+// NAVER_CLIENT_ID: 네이버 개발자센터 애플리케이션의 Client ID (공개돼도 안전)
+// NAVER_REDIRECT_URI: 배포한 Cloud Function 주소 (네이버 앱의 Callback URL 과 반드시 동일)
+const NAVER_CLIENT_ID = "FeTGKR5VotTlnQE8cq4t";
+const NAVER_REDIRECT_URI = "https://asia-northeast3-manseayuk.cloudfunctions.net/naverCallback";
 
 const notConfigured = firebaseConfig.apiKey.startsWith('__PASTE');
 let auth=null, db=null, provider=null, uid=null;
@@ -1969,7 +1987,7 @@ if(notConfigured){
 
 function userDoc(){ return doc(db,'users',uid); }
 
-// 클래식 스크립트가 호출하는 API
+// 클래식 스크립트가 호출하는 API (구글)
 window.SajuCloud={
   signIn(){ return signInWithPopup(auth, provider); },
   signOut(){ return signOut(auth); },
@@ -1980,6 +1998,46 @@ window.SajuCloud={
   }
 };
 
+// ── 네아로(네이버 로그인) ──
+// 네이버 인가 페이지로 이동 → Cloud Function 이 커스텀 토큰을 만들어 사이트로 되돌려줌
+let naverProfileHint=null;  // 커스텀 토큰 사용자는 displayName 이 늦게 채워지므로 임시 보관
+window.SajuNaver={
+  login(){
+    if(NAVER_CLIENT_ID.startsWith('__PASTE')){
+      alert('네이버 로그인이 아직 설정되지 않았습니다.\n(관리자: NAVER_CLIENT_ID 입력 및 Cloud Function 배포 필요)');
+      return;
+    }
+    const state='st_'+Math.random().toString(36).slice(2)+Date.now().toString(36);
+    const url='https://nid.naver.com/oauth2.0/authorize'
+      +'?response_type=code'
+      +'&client_id='+encodeURIComponent(NAVER_CLIENT_ID)
+      +'&redirect_uri='+encodeURIComponent(NAVER_REDIRECT_URI)
+      +'&state='+encodeURIComponent(state);
+    location.href=url;
+  }
+};
+
+// Cloud Function 이 붙여 보낸 커스텀 토큰(#naver&token=...&name=...&photo=...) 처리
+async function handleNaverReturn(){
+  if(!location.hash || location.hash.indexOf('#naver')!==0) return;
+  const q=location.hash.slice(location.hash.indexOf('&')+1);
+  const params=new URLSearchParams(q);
+  const token=params.get('token');
+  const name=params.get('name')||'';
+  const photo=params.get('photo')||'';
+  const err=params.get('error');
+  history.replaceState(null,'',location.pathname+location.search); // URL에서 토큰 흔적 제거
+  if(err){ alert('네이버 로그인 취소/오류: '+err); return; }
+  if(!token) return;
+  naverProfileHint={ name, photo };
+  try{
+    await signInWithCustomToken(auth, token);
+    if(auth.currentUser){
+      try{ await updateProfile(auth.currentUser,{ displayName:name||null, photoURL:photo||null }); }catch(_){}
+    }
+  }catch(e){ console.error('네이버 로그인 실패', e); alert('네이버 로그인 처리 실패: '+((e&&e.message)||e)); }
+}
+
 if(auth){
   onAuthStateChanged(auth, async (user)=>{
     if(user){
@@ -1989,13 +2047,18 @@ if(auth){
         const snap=await getDoc(userDoc());
         if(snap.exists()) remote=snap.data().profiles||{};
       }catch(e){ console.error('클라우드 프로필 로드 실패', e); }
+      // 네이버(커스텀 토큰) 사용자는 displayName/photoURL 이 늦거나 비어 있을 수 있어 폴백 적용
+      const dispName=user.displayName||(naverProfileHint&&naverProfileHint.name)||user.email;
+      const dispPhoto=user.photoURL||(naverProfileHint&&naverProfileHint.photo)||'';
       window.__cloud && window.__cloud.onAuth(
-        { uid:user.uid, name:user.displayName, email:user.email, photo:user.photoURL }, remote);
+        { uid:user.uid, name:dispName, email:user.email, photo:dispPhoto }, remote);
     }else{
       uid=null;
+      naverProfileHint=null;
       window.__cloud && window.__cloud.onAuth(null);
     }
   });
+  handleNaverReturn();  // 네이버 리다이렉트로 돌아온 경우 처리
 }
 </script>
 </body>

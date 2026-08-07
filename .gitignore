@@ -5,6 +5,11 @@ node_modules/
 manseryeok_1900_2050.json
 manseryeok_1900_2050.csv
 
+# Cloud Functions 비밀값·의존성 (커밋 금지)
+functions/node_modules/
+functions/.env
+functions/.runtimeconfig.json
+
 # 기타
 *.log
 .DS_Store
