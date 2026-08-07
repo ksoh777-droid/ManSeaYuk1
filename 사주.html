@@ -173,7 +173,17 @@
       <button class="tool" id="btnPrint">🖨 인쇄</button>
       <button class="tool" id="btnImg">🖼 이미지 저장</button>
     </div>
-    <!-- ── 입력정보 저장 / 불러오기 (브라우저 로컬 저장) ── -->
+    <!-- ── 로그인 (구글) : 계정별 클라우드 저장 ── -->
+    <div class="form" id="authBar" style="margin-top:10px;align-items:center">
+      <button class="tool" id="btnLogin">🔐 구글로 로그인</button>
+      <span id="userBadge" style="display:none;align-items:center;gap:8px">
+        <img id="userPhoto" alt="" style="width:24px;height:24px;border-radius:50%;vertical-align:middle;display:none">
+        <b id="userName"></b>
+        <button class="tool" id="btnLogout">로그아웃</button>
+      </span>
+      <span class="note" id="authStatus" style="align-self:center;margin:0">로그인하면 저장한 사주 정보를 다른 기기·브라우저에서도 불러올 수 있습니다.</span>
+    </div>
+    <!-- ── 입력정보 저장 / 불러오기 (로그인 시 클라우드, 아니면 브라우저 로컬) ── -->
     <div class="form" style="margin-top:10px">
       <div class="field"><label>이름·메모 (저장용)</label>
         <input type="text" id="profileName" placeholder="예: 홍길동" style="width:150px" maxlength="30"></div>
@@ -186,7 +196,7 @@
       <input type="file" id="importFile" accept="application/json,.json" style="display:none">
       <span class="note" id="profileMsg" style="align-self:center;margin:0"></span>
     </div>
-    <div class="note">※ <b>진태양시</b>: 출생지 경도·균시차·과거 표준시(127.5°E)·서머타임을 자동 반영합니다. <b>자시 처리</b> — 야자시설(자정에 일주 변경) / 정자시설(23시에 일주 변경). 절입일 당일 출생은 시각에 따라 결과가 달라질 수 있습니다.<br>※ <b>입력 저장</b>은 이 브라우저에만 저장됩니다(서버 전송 없음). 다른 기기·브라우저에서는 보이지 않으며, 브라우저 데이터를 지우면 사라집니다.</div>
+    <div class="note">※ <b>진태양시</b>: 출생지 경도·균시차·과거 표준시(127.5°E)·서머타임을 자동 반영합니다. <b>자시 처리</b> — 야자시설(자정에 일주 변경) / 정자시설(23시에 일주 변경). 절입일 당일 출생은 시각에 따라 결과가 달라질 수 있습니다.<br>※ <b>입력 저장</b> — <b>로그인 전</b>에는 이 브라우저에만 저장되어 다른 기기에서는 보이지 않습니다. <b>구글 로그인</b> 시에는 계정(클라우드)에 저장되어 다른 기기·브라우저에서도 불러올 수 있습니다.</div>
   </div>
 
   <!-- ── 만세력 달력 · 간지 찾기 도구 ── -->
@@ -1680,13 +1690,31 @@ function setInputState(s){
   syncCorrUI();
 }
 // 저장소 읽기/쓰기 (실패해도 앱은 계속 동작)
-function loadProfiles(){
+// ── 로그인 시 클라우드(Firestore), 아니면 브라우저 로컬(localStorage) ──
+let cloudUser=null;        // 로그인 사용자 정보(없으면 null=로컬 모드)
+let profilesCache=null;    // 활성 백엔드의 프로필 메모리 캐시
+// 로컬(localStorage) 원본 접근
+function loadLocal(){
   try{return JSON.parse(localStorage.getItem(PROFILE_KEY))||{};}
   catch(e){return {};}
 }
-function storeProfiles(obj){
+function saveLocal(obj){
   try{localStorage.setItem(PROFILE_KEY,JSON.stringify(obj));return true;}
   catch(e){profileFlash('저장 실패: 브라우저 저장공간을 사용할 수 없습니다.');return false;}
+}
+// 앱이 사용하는 공용 읽기/쓰기 (캐시 경유)
+function loadProfiles(){
+  if(!profilesCache) profilesCache=loadLocal();   // 최초엔 로컬
+  return profilesCache;
+}
+function storeProfiles(obj){
+  profilesCache=obj;
+  if(cloudUser && window.SajuCloud){
+    // 클라우드: 낙관적으로 성공 처리하고, 실패 시에만 알림
+    window.SajuCloud.save(obj).catch(e=>profileFlash('⚠ 클라우드 저장 실패: '+((e&&e.message)||e)));
+    return true;
+  }
+  return saveLocal(obj);
 }
 function profileFlash(msg){
   const el=document.getElementById('profileMsg');el.textContent=msg;
@@ -1772,9 +1800,144 @@ document.getElementById('importFile').addEventListener('change',e=>{
   reader.onerror=()=>profileFlash('파일을 읽지 못했습니다.');
   reader.readAsText(file);
 });
+
+// ══════════════════════════════════════════
+//  로그인(구글) ↔ 클라우드 저장 브리지
+//  실제 Firebase 처리는 하단 <script type="module">가 담당하고,
+//  window.SajuCloud / window.__cloud 로 이 클래식 스크립트와 연결됩니다.
+// ══════════════════════════════════════════
+const btnLogin=document.getElementById('btnLogin');
+const btnLogout=document.getElementById('btnLogout');
+if(btnLogin) btnLogin.addEventListener('click',()=>{
+  if(window.SajuCloud){
+    window.SajuCloud.signIn().catch(e=>{
+      const code=(e&&e.code)||'';
+      let msg='로그인 실패: '+((e&&e.message)||e);
+      if(code==='auth/operation-not-allowed') msg='로그인 실패: Firebase 콘솔에서 Google 로그인이 아직 켜지지 않았습니다.\n(Authentication → Sign-in method → Google → 사용 설정)';
+      else if(code==='auth/unauthorized-domain') msg='로그인 실패: 이 도메인이 승인되지 않았습니다.\n(Authentication → Settings → 승인된 도메인에 현재 주소 추가)';
+      else if(code==='auth/popup-blocked') msg='로그인 실패: 브라우저가 팝업을 차단했습니다. 주소창의 팝업 차단 아이콘에서 허용해 주세요.';
+      else if(code==='auth/popup-closed-by-user') msg='로그인 창이 닫혔습니다. 다시 시도해 주세요.';
+      else if(code==='auth/configuration-not-found') msg='로그인 실패: Firebase Authentication이 설정되지 않았습니다.\n(Authentication → 시작하기, 그리고 Google 로그인 사용 설정)';
+      console.error('[SajuCloud] signIn 오류', code, e);
+      alert(msg);
+    });
+  }else{
+    alert('로그인 모듈을 불러오지 못했습니다.\n인터넷 연결을 확인하시고, 개발자도구(F12) → Console 탭의 빨간 오류 메시지를 확인해 주세요.');
+  }
+});
+if(btnLogout) btnLogout.addEventListener('click',()=>{ if(window.SajuCloud) window.SajuCloud.signOut(); });
+
+// 모듈 스크립트가 인증 상태 변화 시 호출하는 진입점
+window.__cloud={
+  // user: {uid,name,email,photo} 또는 null(로그아웃), remote: 클라우드에 저장돼 있던 프로필 맵
+  onAuth(user, remote){
+    const badge=document.getElementById('userBadge');
+    const status=document.getElementById('authStatus');
+    if(user){
+      cloudUser=user;
+      profilesCache=remote||{};
+      // 최초 로그인 시: 이 브라우저에만 있던 입력을 계정으로 올릴지 제안
+      const local=loadLocal(), lkeys=Object.keys(local);
+      if(lkeys.length){
+        const merged={...profilesCache}; let add=0;
+        for(const k of lkeys){ if(!merged[k]){merged[k]=local[k];add++;} }
+        if(add>0 && confirm('이 브라우저에 저장된 입력 '+add+'건을 내 계정에도 올릴까요?\n(확인=올리기, 취소=계정에 이미 있는 것만 사용)')){
+          profilesCache=merged;
+          if(window.SajuCloud) window.SajuCloud.save(merged).catch(()=>{});
+        }
+      }
+      document.getElementById('userName').textContent=user.name||user.email||'로그인됨';
+      const ph=document.getElementById('userPhoto');
+      if(user.photo){ ph.src=user.photo; ph.style.display=''; } else ph.style.display='none';
+      badge.style.display='inline-flex';
+      if(btnLogin) btnLogin.style.display='none';
+      status.textContent='✅ 클라우드 저장 사용 중 — 저장한 입력이 계정에 보관되어 다른 기기에서도 보입니다.';
+    }else{
+      cloudUser=null;
+      profilesCache=loadLocal();  // 로컬 모드로 복귀
+      badge.style.display='none';
+      if(btnLogin) btnLogin.style.display='';
+      status.textContent='로그인하면 저장한 사주 정보를 다른 기기·브라우저에서도 불러올 수 있습니다.';
+    }
+    refreshProfileList();
+  }
+};
+
 refreshProfileList();
 
 compute();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════
+     Firebase — 구글 로그인 + Firestore 클라우드 저장
+     아래 firebaseConfig 값만 본인 프로젝트 값으로 교체하면 동작합니다.
+     (Firebase 콘솔 → 프로젝트 설정 → 내 앱 → SDK 설정 및 구성)
+     ══════════════════════════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence }
+  from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc }
+  from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
+
+// ▼▼▼ 여기만 본인 Firebase 프로젝트 값으로 교체하세요 ▼▼▼
+const firebaseConfig = {
+  apiKey: "AIzaSyAlTMHfHIZ_5BcUQFq0YG_4Fqt3uLZwOSQ",
+  authDomain: "manseayuk.firebaseapp.com",
+  projectId: "manseayuk",
+  storageBucket: "manseayuk.firebasestorage.app",
+  messagingSenderId: "1048869269083",
+  appId: "1:1048869269083:web:a04fc662994c3e6ecbd97e"
+};
+// ▲▲▲ 여기까지 ▲▲▲
+
+const notConfigured = firebaseConfig.apiKey.startsWith('__PASTE');
+let auth=null, db=null, provider=null, uid=null;
+
+if(notConfigured){
+  const s=document.getElementById('authStatus');
+  if(s) s.textContent='⚙ 로그인 기능이 아직 설정되지 않았습니다. (관리자: firebaseConfig 값 입력 필요)';
+  const b=document.getElementById('btnLogin'); if(b) b.disabled=true;
+}else{
+  try{
+    const app=initializeApp(firebaseConfig);
+    auth=getAuth(app);
+    db=getFirestore(app);
+    provider=new GoogleAuthProvider();
+    await setPersistence(auth, browserLocalPersistence);  // 브라우저 유지 로그인
+  }catch(e){ console.error('Firebase 초기화 실패', e); }
+}
+
+function userDoc(){ return doc(db,'users',uid); }
+
+// 클래식 스크립트가 호출하는 API
+window.SajuCloud={
+  signIn(){ return signInWithPopup(auth, provider); },
+  signOut(){ return signOut(auth); },
+  async save(profiles){
+    if(!uid) throw new Error('로그인이 필요합니다');
+    // 문서 전체를 덮어써 삭제도 반영 (merge 미사용)
+    await setDoc(userDoc(), { profiles, updatedAt: Date.now() });
+  }
+};
+
+if(auth){
+  onAuthStateChanged(auth, async (user)=>{
+    if(user){
+      uid=user.uid;
+      let remote={};
+      try{
+        const snap=await getDoc(userDoc());
+        if(snap.exists()) remote=snap.data().profiles||{};
+      }catch(e){ console.error('클라우드 프로필 로드 실패', e); }
+      window.__cloud && window.__cloud.onAuth(
+        { uid:user.uid, name:user.displayName, email:user.email, photo:user.photoURL }, remote);
+    }else{
+      uid=null;
+      window.__cloud && window.__cloud.onAuth(null);
+    }
+  });
+}
 </script>
 </body>
 </html>
