@@ -4,7 +4,8 @@ import { extname, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const dir = process.cwd();
-const types = { '.html':'text/html; charset=utf-8', '.json':'application/json', '.csv':'text/csv', '.js':'text/javascript' };
+const types = { '.html':'text/html; charset=utf-8', '.json':'application/json', '.csv':'text/csv', '.js':'text/javascript',
+  '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.webp':'image/webp', '.svg':'image/svg+xml' };
 
 // ── 인증: 콘솔 API 키(env) 또는 ant CLI OAuth 토큰(Claude 로그인) 자동 감지 ──
 function getAuth() {
