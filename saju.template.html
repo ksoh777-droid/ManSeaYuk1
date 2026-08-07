@@ -171,6 +171,7 @@
         <b id="userName"></b>
         <button class="tool" id="btnLogout">로그아웃</button>
       </span>
+      <a id="adminLink" href="admin.html" class="tool" style="display:none;text-decoration:none">🔐 관리자</a>
     </div>
     <img class="hero-img" src="assets/hero.webp" width="1536" height="1024" alt="사주 조회 — 당신의 운명과 미래를 확인해보세요">
     <div class="hero-cap">萬歲曆 · 1900–2050 · 한국천문연구원(KASI) 기반</div>
@@ -1870,6 +1871,8 @@ if(btnNaverLogin) btnNaverLogin.addEventListener('click',()=>{
   else profileFlash('로그인 모듈을 불러오는 중입니다. 잠시 후 다시 시도하세요.');
 });
 
+// 관리자 페이지 링크를 노출할 계정 (admin.html 함수의 ADMIN_EMAILS와 동일해야 함)
+const ADMIN_EMAILS=['ksoh777@gmail.com'];
 // 모듈 스크립트가 인증 상태 변화 시 호출하는 진입점
 window.__cloud={
   // user: {uid,name,email,photo} 또는 null(로그아웃), remote: 클라우드에 저장돼 있던 프로필 맵
@@ -1894,6 +1897,9 @@ window.__cloud={
       if(user.photo){ ph.src=user.photo; ph.style.display=''; } else ph.style.display='none';
       badge.style.display='inline-flex';
       const lb=document.getElementById('loginButtons'); if(lb) lb.style.display='none';
+      // 관리자 계정일 때만 관리자 페이지 링크 노출
+      const al=document.getElementById('adminLink');
+      if(al) al.style.display=(user.email && ADMIN_EMAILS.includes(user.email))?'inline-flex':'none';
       // 로그인 시에만 저장/불러오기 카드 표시
       const sc=document.getElementById('saveCard'); if(sc) sc.style.display='';
       const lh=document.getElementById('loginHint'); if(lh) lh.style.display='none';
@@ -1903,6 +1909,7 @@ window.__cloud={
       profilesCache=loadLocal();  // 로컬 모드로 복귀
       badge.style.display='none';
       const lb=document.getElementById('loginButtons'); if(lb) lb.style.display='flex';
+      const al=document.getElementById('adminLink'); if(al) al.style.display='none';
       // 로그아웃 시 저장/불러오기 카드 숨기고 안내 표시
       const sc=document.getElementById('saveCard'); if(sc) sc.style.display='none';
       const lh=document.getElementById('loginHint'); if(lh) lh.style.display='';
