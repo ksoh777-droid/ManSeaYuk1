@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>관리자 · 회원 조회 — 사주 조회</title>
+<style>
+  :root{--bg:#f4efe6;--panel:#fffdf8;--ink:#2b2420;--sub:#7a6f63;--line:#e3d9c7;--accent:#8a1c1c;--accent2:#b8860b;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Malgun Gothic","맑은 고딕",system-ui,sans-serif;line-height:1.5;padding:16px}
+  .wrap{max-width:1100px;margin:0 auto}
+  h1{font-size:1.4rem;margin:.2em 0;letter-spacing:.03em}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+  .top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .top .spacer{flex:1}
+  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:8px 16px;font-weight:600}
+  button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  button:hover{filter:brightness(.97)}
+  .muted{color:var(--sub);font-size:.9rem}
+  .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;font-weight:700}
+  .b-google{background:#e8f0fe;color:#1a56db}
+  .b-naver{background:#e6f8ee;color:#03844a}
+  .b-other{background:#eee;color:#555}
+  .stat{display:flex;gap:20px;flex-wrap:wrap;margin:6px 0}
+  .stat .n{font-size:1.6rem;font-weight:800;color:var(--accent)}
+  table{width:100%;border-collapse:collapse;font-size:.92rem}
+  th,td{text-align:left;padding:10px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  th{color:var(--sub);font-weight:700;font-size:.82rem;white-space:nowrap}
+  tbody tr.mrow:hover{background:#faf6ec}
+  .avatar{width:30px;height:30px;border-radius:50%;object-fit:cover;background:#eee;vertical-align:middle}
+  .avatar.ph{display:inline-grid;place-items:center;color:#fff;font-weight:700;font-size:.85rem}
+  .tablewrap{overflow-x:auto}
+  .detail{background:#fbf7ee}
+  .detail td{padding:6px 14px}
+  .plist{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:8px}
+  .plist li{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:.85rem}
+  .plist b{color:var(--accent)}
+  .expander{color:var(--accent2);font-weight:700;cursor:pointer;user-select:none}
+  .err{color:var(--accent);font-weight:600}
+  code{background:#f0e9db;padding:1px 5px;border-radius:4px;font-size:.85em}
+  a.home{color:var(--sub);text-decoration:none;font-size:.9rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card top">
+    <h1>🔐 관리자 · 회원 조회</h1>
+    <a class="home" href="./">← 사이트로</a>
+    <div class="spacer"></div>
+    <span id="who" class="muted"></span>
+    <button id="btnLogin" class="primary" style="display:none">구글로 로그인</button>
+    <button id="btnLogout" style="display:none">로그아웃</button>
+    <button id="btnReload" style="display:none">새로고침</button>
+  </div>
+
+  <div class="card" id="stateCard">
+    <span id="stateMsg" class="muted">로그인 상태 확인 중…</span>
+  </div>
+
+  <div class="card" id="dataCard" style="display:none">
+    <div class="stat">
+      <div><div class="n" id="cntTotal">0</div><div class="muted">전체 회원</div></div>
+      <div><div class="n" id="cntGoogle">0</div><div class="muted">구글</div></div>
+      <div><div class="n" id="cntNaver">0</div><div class="muted">네이버</div></div>
+      <div><div class="n" id="cntSaved">0</div><div class="muted">저장 데이터 보유</div></div>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>회원</th><th>이메일</th><th>방식</th><th>가입일</th><th>마지막 로그인</th><th>저장</th><th>UID</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p class="muted" id="genAt" style="margin-top:10px"></p>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence }
+  from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
+import { getFunctions, httpsCallable }
+  from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-functions.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAlTMHfHIZ_5BcUQFq0YG_4Fqt3uLZwOSQ",
+  authDomain: "manseayuk.firebaseapp.com",
+  projectId: "manseayuk",
+  storageBucket: "manseayuk.firebasestorage.app",
+  messagingSenderId: "1048869269083",
+  appId: "1:1048869269083:web:a04fc662994c3e6ecbd97e"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const functions = getFunctions(app, 'asia-northeast3');
+const provider = new GoogleAuthProvider();
+await setPersistence(auth, browserLocalPersistence);
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => (s == null ? '' : String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])));
+function fmt(t){ if(!t) return '-'; const d=new Date(t); if(isNaN(d)) return esc(t);
+  return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0')
+    +' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+
+$('btnLogin').addEventListener('click', ()=> signInWithPopup(auth, provider).catch(e=>{
+  $('stateMsg').innerHTML='<span class="err">로그인 실패: '+esc(e.message)+'</span>';
+}));
+$('btnLogout').addEventListener('click', ()=> signOut(auth));
+$('btnReload').addEventListener('click', ()=> load());
+
+onAuthStateChanged(auth, (user)=>{
+  if(user){
+    $('who').textContent = (user.displayName||user.email||'') ;
+    $('btnLogin').style.display='none';
+    $('btnLogout').style.display='';
+    load();
+  }else{
+    $('who').textContent='';
+    $('btnLogin').style.display='';
+    $('btnLogout').style.display='none';
+    $('btnReload').style.display='none';
+    $('dataCard').style.display='none';
+    $('stateMsg').textContent='관리자 구글 계정으로 로그인해 주세요.';
+  }
+});
+
+async function load(){
+  $('stateMsg').textContent='회원 데이터를 불러오는 중…';
+  $('dataCard').style.display='none';
+  try{
+    const callable = httpsCallable(functions, 'adminListMembers');
+    const res = await callable({});
+    render(res.data);
+    $('stateMsg').textContent='';
+    $('stateCard').style.display='none';
+    $('btnReload').style.display='';
+  }catch(e){
+    $('stateCard').style.display='';
+    if(e.code==='functions/permission-denied'){
+      $('stateMsg').innerHTML='<span class="err">이 계정은 관리자가 아닙니다.</span> 관리자 계정으로 로그인해 주세요.';
+    }else if(e.code==='functions/unauthenticated'){
+      $('stateMsg').innerHTML='<span class="err">로그인이 필요합니다.</span>';
+    }else{
+      $('stateMsg').innerHTML='<span class="err">불러오기 실패: '+esc(e.message||e.code||e)+'</span>';
+    }
+  }
+}
+
+function avatar(m){
+  if(m.photo) return '<img class="avatar" src="'+esc(m.photo)+'" alt="" referrerpolicy="no-referrer">';
+  const ch=(m.name||m.email||'?').trim().charAt(0).toUpperCase()||'?';
+  const bg=m.provider==='naver'?'#03c75a':(m.provider==='google.com'?'#1a56db':'#b8860b');
+  return '<span class="avatar ph" style="background:'+bg+'">'+esc(ch)+'</span>';
+}
+function provBadge(p){
+  if(p==='naver') return '<span class="badge b-naver">네이버</span>';
+  if(p==='google.com') return '<span class="badge b-google">구글</span>';
+  return '<span class="badge b-other">'+esc(p)+'</span>';
+}
+
+function render(d){
+  const members = d.members||[];
+  let g=0,n=0,s=0;
+  members.forEach(m=>{ if(m.provider==='naver')n++; else if(m.provider==='google.com')g++; if(m.saved&&m.saved.count>0)s++; });
+  $('cntTotal').textContent=members.length;
+  $('cntGoogle').textContent=g;
+  $('cntNaver').textContent=n;
+  $('cntSaved').textContent=s;
+
+  const tb=$('tbody'); tb.innerHTML='';
+  members.forEach((m,i)=>{
+    const tr=document.createElement('tr'); tr.className='mrow';
+    const savedCount=m.saved?m.saved.count:0;
+    tr.innerHTML=
+      '<td>'+(i+1)+'</td>'
+      +'<td style="display:flex;align-items:center;gap:8px">'+avatar(m)+'<b>'+esc(m.name||'(이름없음)')+'</b></td>'
+      +'<td>'+(esc(m.email)||'<span class="muted">-</span>')+'</td>'
+      +'<td>'+provBadge(m.provider)+'</td>'
+      +'<td class="muted">'+fmt(m.created)+'</td>'
+      +'<td class="muted">'+fmt(m.lastLogin)+'</td>'
+      +'<td>'+(savedCount>0?'<span class="expander" data-i="'+i+'">'+savedCount+'건 ▾</span>':'<span class="muted">0</span>')+'</td>'
+      +'<td><code>'+esc(m.uid)+'</code></td>';
+    tb.appendChild(tr);
+
+    if(savedCount>0){
+      const dr=document.createElement('tr'); dr.className='detail'; dr.style.display='none'; dr.dataset.detail=i;
+      const profiles=m.saved.profiles||{};
+      let items='';
+      Object.keys(profiles).forEach(nm=>{
+        const p=profiles[nm]||{};
+        const g2=p.gender==='F'?'여':'남';
+        items+='<li><b>'+esc(nm)+'</b> · '+esc(p.date||'')+' '+esc(p.time||'')+' · '+g2+(p.noTime?' · 시각모름':'')+'</li>';
+      });
+      dr.innerHTML='<td></td><td colspan="7"><ul class="plist">'+items+'</ul></td>';
+      tb.appendChild(dr);
+    }
+  });
+
+  tb.querySelectorAll('.expander').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const i=el.dataset.i;
+      const dr=tb.querySelector('tr.detail[data-detail="'+i+'"]');
+      if(dr){ const show=dr.style.display==='none'; dr.style.display=show?'':'none'; el.textContent=el.textContent.replace(show?'▾':'▴', show?'▴':'▾'); }
+    });
+  });
+
+  $('genAt').textContent='조회 시각: '+fmt(d.generatedAt);
+  $('dataCard').style.display='';
+}
+</script>
+</body>
+</html>

@@ -19,6 +19,9 @@ const REGION = 'asia-northeast3';
 // 로그인 성공 후 되돌아갈 공개 사이트 주소
 const SITE = 'https://ksoh777-droid.github.io/ManSeaYuk1/';
 
+// 관리자 페이지에 접근할 수 있는 구글 계정 (여러 명 가능)
+const ADMIN_EMAILS = ['ksoh777@gmail.com'];
+
 exports.naverCallback = functions
   .region(REGION)
   .https.onRequest(async (req, res) => {
@@ -80,4 +83,61 @@ exports.naverCallback = functions
     } catch (e) {
       res.status(500).send('네이버 로그인 처리 오류: ' + ((e && e.message) || e));
     }
+  });
+
+// ══════════════════════════════════════════════════════════════
+//  관리자 전용: 전체 회원 목록 + 저장 데이터 조회 (onCall)
+//   - 호출자의 Firebase 인증 토큰을 서버에서 검증하여 관리자만 허용
+//   - Admin SDK 로 Authentication 사용자 목록 + Firestore users 컬렉션을 합쳐 반환
+// ══════════════════════════════════════════════════════════════
+exports.adminListMembers = functions
+  .region(REGION)
+  .https.onCall(async (data, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError('unauthenticated', '로그인이 필요합니다.');
+    }
+    const email = (context.auth.token && context.auth.token.email) || '';
+    if (!ADMIN_EMAILS.includes(email)) {
+      throw new functions.https.HttpsError('permission-denied', '관리자만 접근할 수 있습니다.');
+    }
+
+    // 1) Authentication 회원 목록 (페이지네이션으로 전체 수집)
+    const members = [];
+    let pageToken;
+    do {
+      const res = await admin.auth().listUsers(1000, pageToken);
+      res.users.forEach((u) => {
+        const isNaver = u.uid.indexOf('naver:') === 0;
+        members.push({
+          uid: u.uid,
+          email: u.email || '',
+          name: u.displayName || '',
+          photo: u.photoURL || '',
+          provider: isNaver ? 'naver' : ((u.providerData[0] && u.providerData[0].providerId) || 'unknown'),
+          created: u.metadata.creationTime || '',
+          lastLogin: u.metadata.lastSignInTime || ''
+        });
+      });
+      pageToken = res.pageToken;
+    } while (pageToken);
+
+    // 2) Firestore 저장 데이터 (users 컬렉션)
+    const byUid = {};
+    const snap = await admin.firestore().collection('users').get();
+    snap.forEach((doc) => {
+      const d = doc.data() || {};
+      const profiles = d.profiles || {};
+      byUid[doc.id] = {
+        count: Object.keys(profiles).length,
+        names: Object.keys(profiles),
+        profiles: profiles,
+        updatedAt: d.updatedAt || null
+      };
+    });
+
+    // 3) 병합 (가입일 최신순 정렬)
+    members.forEach((m) => { m.saved = byUid[m.uid] || { count: 0, names: [], profiles: {}, updatedAt: null }; });
+    members.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
+
+    return { members: members, total: members.length, generatedAt: Date.now() };
   });
