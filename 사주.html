@@ -115,6 +115,20 @@
   .aiout:empty{display:none}
   @media(max-width:560px){.glyph{font-size:1.9rem}.form{gap:8px}
     table.iljin td{height:44px;font-size:.8rem}table.iljin .ijg{font-size:.85rem}}
+  /* ── 헤더(로고+로그인) / 카드 제목 ── */
+  .apphead{position:relative;text-align:center;padding-top:18px}
+  .apphead .authArea{position:absolute;top:14px;right:16px;display:flex;align-items:center;gap:8px}
+  .brand{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .brand h1{margin:.1em 0}
+  .brand .logo{filter:drop-shadow(0 1px 2px rgba(0,0,0,.15))}
+  .cardhead{font-weight:700;color:var(--accent);font-size:1.05rem;margin-bottom:14px;
+    padding-bottom:8px;border-bottom:1px solid var(--line);letter-spacing:.02em}
+  .cardhead-sub{font-weight:400;color:var(--sub);font-size:.85rem;margin-left:6px}
+  #loginHint{color:var(--sub);font-size:.95rem}
+  @media(max-width:560px){
+    .apphead{padding-top:8px}
+    .apphead .authArea{position:static;justify-content:center;margin-bottom:10px}
+  }
 </style>
 <script>/*!
  * html2canvas 1.4.1 <https://html2canvas.hertzen.com>
@@ -139,9 +153,35 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>🔮 사주 조회 <small>萬歲曆 · 1900~2050 · 한국천문연구원(KASI) 기반</small></h1>
+  <!-- ── Block 1: 헤더 (로고 + 로그인) ── -->
+  <div class="card apphead">
+    <div class="authArea">
+      <button class="tool" id="btnLogin">🔐 구글로 로그인</button>
+      <span id="userBadge" style="display:none;align-items:center;gap:8px">
+        <img id="userPhoto" alt="" style="width:28px;height:28px;border-radius:50%;vertical-align:middle;display:none">
+        <b id="userName"></b>
+        <button class="tool" id="btnLogout">로그아웃</button>
+      </span>
+    </div>
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 120 120" width="78" height="78" role="img" aria-label="만세력 사주 로고">
+        <defs><clipPath id="lg"><circle cx="60" cy="60" r="44"/></clipPath></defs>
+        <circle cx="60" cy="60" r="56" fill="none" stroke="#b8860b" stroke-width="3.5"/>
+        <circle cx="60" cy="60" r="49.5" fill="none" stroke="#b8860b" stroke-width="1" opacity=".5"/>
+        <g clip-path="url(#lg)">
+          <circle cx="60" cy="60" r="44" fill="#f3e6c4"/>
+          <path d="M60,16 A44,44 0 0,1 60,104 A22,22 0 0,1 60,60 A22,22 0 0,0 60,16 Z" fill="#8a1c1c"/>
+          <circle cx="60" cy="38" r="6" fill="#f3e6c4"/>
+          <circle cx="60" cy="82" r="6" fill="#8a1c1c"/>
+        </g>
+      </svg>
+      <h1>사주 조회 <small>萬歲曆 · 1900~2050 · 한국천문연구원(KASI) 기반</small></h1>
+    </div>
+  </div>
 
+  <!-- ── Block 2: 조회 정보 입력 ── -->
   <div class="card no-print">
+    <div class="cardhead">🔮 조회 정보 입력 <span class="cardhead-sub">생년월일·시각 등</span></div>
     <div class="form">
       <div class="field"><label>생년월일 (양력)</label>
         <input type="date" id="date" min="1900-01-01" max="2050-12-31" value="1990-05-15"></div>
@@ -173,18 +213,18 @@
       <button class="tool" id="btnPrint">🖨 인쇄</button>
       <button class="tool" id="btnImg">🖼 이미지 저장</button>
     </div>
-    <!-- ── 로그인 (구글) : 계정별 클라우드 저장 ── -->
-    <div class="form" id="authBar" style="margin-top:10px;align-items:center">
-      <button class="tool" id="btnLogin">🔐 구글로 로그인</button>
-      <span id="userBadge" style="display:none;align-items:center;gap:8px">
-        <img id="userPhoto" alt="" style="width:24px;height:24px;border-radius:50%;vertical-align:middle;display:none">
-        <b id="userName"></b>
-        <button class="tool" id="btnLogout">로그아웃</button>
-      </span>
-      <span class="note" id="authStatus" style="align-self:center;margin:0">로그인하면 저장한 사주 정보를 다른 기기·브라우저에서도 불러올 수 있습니다.</span>
-    </div>
-    <!-- ── 입력정보 저장 / 불러오기 (로그인 시 클라우드, 아니면 브라우저 로컬) ── -->
-    <div class="form" style="margin-top:10px">
+    <div class="note">※ <b>진태양시</b>: 출생지 경도·균시차·과거 표준시(127.5°E)·서머타임을 자동 반영합니다. <b>자시 처리</b> — 야자시설(자정에 일주 변경) / 정자시설(23시에 일주 변경). 절입일 당일 출생은 시각에 따라 결과가 달라질 수 있습니다.</div>
+  </div>
+
+  <!-- 로그아웃 상태 안내 (로그인 시 숨김) -->
+  <div class="card no-print" id="loginHint" style="text-align:center">
+    🔒 <b>로그인</b>하면 입력한 사주 정보를 <b>저장</b>하고 다른 기기·브라우저에서도 <b>불러올</b> 수 있습니다.
+  </div>
+
+  <!-- ── Block 3: 저장 / 불러오기 (로그인 시에만 표시) ── -->
+  <div class="card no-print" id="saveCard" style="display:none">
+    <div class="cardhead">💾 내 사주 저장 · 불러오기</div>
+    <div class="form">
       <div class="field"><label>이름·메모 (저장용)</label>
         <input type="text" id="profileName" placeholder="예: 홍길동" style="width:150px" maxlength="30"></div>
       <button class="tool" id="btnSaveProfile">💾 입력 저장</button>
@@ -196,7 +236,7 @@
       <input type="file" id="importFile" accept="application/json,.json" style="display:none">
       <span class="note" id="profileMsg" style="align-self:center;margin:0"></span>
     </div>
-    <div class="note">※ <b>진태양시</b>: 출생지 경도·균시차·과거 표준시(127.5°E)·서머타임을 자동 반영합니다. <b>자시 처리</b> — 야자시설(자정에 일주 변경) / 정자시설(23시에 일주 변경). 절입일 당일 출생은 시각에 따라 결과가 달라질 수 있습니다.<br>※ <b>입력 저장</b> — <b>로그인 전</b>에는 이 브라우저에만 저장되어 다른 기기에서는 보이지 않습니다. <b>구글 로그인</b> 시에는 계정(클라우드)에 저장되어 다른 기기·브라우저에서도 불러올 수 있습니다.</div>
+    <div class="note" id="authStatus">✅ 클라우드 저장 사용 중 — 저장한 입력이 계정에 보관되어 다른 기기·브라우저에서도 보입니다.</div>
   </div>
 
   <!-- ── 만세력 달력 · 간지 찾기 도구 ── -->
@@ -1851,13 +1891,18 @@ window.__cloud={
       if(user.photo){ ph.src=user.photo; ph.style.display=''; } else ph.style.display='none';
       badge.style.display='inline-flex';
       if(btnLogin) btnLogin.style.display='none';
-      status.textContent='✅ 클라우드 저장 사용 중 — 저장한 입력이 계정에 보관되어 다른 기기에서도 보입니다.';
+      // 로그인 시에만 저장/불러오기 카드 표시
+      const sc=document.getElementById('saveCard'); if(sc) sc.style.display='';
+      const lh=document.getElementById('loginHint'); if(lh) lh.style.display='none';
+      if(status) status.textContent='✅ 클라우드 저장 사용 중 — 저장한 입력이 계정에 보관되어 다른 기기·브라우저에서도 보입니다.';
     }else{
       cloudUser=null;
       profilesCache=loadLocal();  // 로컬 모드로 복귀
       badge.style.display='none';
       if(btnLogin) btnLogin.style.display='';
-      status.textContent='로그인하면 저장한 사주 정보를 다른 기기·브라우저에서도 불러올 수 있습니다.';
+      // 로그아웃 시 저장/불러오기 카드 숨기고 안내 표시
+      const sc=document.getElementById('saveCard'); if(sc) sc.style.display='none';
+      const lh=document.getElementById('loginHint'); if(lh) lh.style.display='';
     }
     refreshProfileList();
   }
