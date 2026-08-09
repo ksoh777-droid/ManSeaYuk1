@@ -1981,14 +1981,35 @@ window.__cloud={
     const g=TOJEONG.gwae[r.key];
     if(!g){out.innerHTML='<div class="note">해당 괘를 찾지 못했습니다. ('+r.key+')</div>';return;}
     const col=gradeColor[g.grade]||'#2b2420';
+    const aspect=(icon,name,txt)=> txt?('<div style="background:#fffdf8;border:1px solid var(--line);border-left:4px solid '+col+';border-radius:8px;padding:8px 11px">'
+      +'<div style="font-weight:700;color:'+col+';font-size:.85rem;margin-bottom:2px">'+icon+' '+name+'</div>'
+      +'<div style="font-size:.92rem;line-height:1.7">'+txt+'</div></div>'):'';
     let html='<div class="card" style="margin-top:12px">'
       +'<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px">'
-      +'<span style="font-size:1.3rem;font-weight:800;color:'+col+'">'+targetY+'년 · '+g.grade+'</span>'
+      +'<span style="font-size:1.35rem;font-weight:800;color:'+col+'">'+targetY+'년 · '+g.grade+'</span>'
       +'<span class="note" style="margin:0">괘 '+r.sang+'-'+r.jung+'-'+r.ha+' · 세는나이 '+r.age+'세 · 음력 '+r.lunar.month+'월 '+r.lunar.day+'일'+(r.lunar.leap?'(윤달)':'')+'</span></div>'
-      +'<div style="font-weight:700;color:'+col+';margin-bottom:6px">'+g.summary+'</div>'
-      +'<div style="line-height:1.9;margin-bottom:12px">'+g.chong+'</div>'
-      +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px">';
-    for(const m of g.months) html+='<div style="background:#faf6ec;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:.92rem">'+m+'</div>';
+      +'<div style="font-weight:700;color:'+col+';margin-bottom:6px;font-size:1.05rem">'+g.summary+'</div>'
+      // 년중 총운
+      +'<div style="font-weight:700;color:var(--accent);margin:10px 0 4px">📜 년중 총운</div>'
+      +'<div style="line-height:1.95;margin-bottom:12px">'+g.chong+'</div>'
+      // 분야별 운
+      +'<div style="font-weight:700;color:var(--accent);margin:10px 0 6px">🧭 분야별 운</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin-bottom:12px">'
+      + aspect('💰','재물운', g.jaemul) + aspect('🩺','건강운', g.geongang)
+      + aspect('💗','애정·가정운', g.aejeong) + aspect('💼','직업·사업운', g.jikeop)
+      +'</div>';
+    if(g.advice) html+='<div style="background:#f3ece0;border-radius:8px;padding:9px 12px;margin-bottom:12px;line-height:1.8"><b style="color:'+col+'">한 해 조언</b> · '+g.advice+'</div>';
+    // 월별 상세
+    html+='<div style="font-weight:700;color:var(--accent);margin:10px 0 6px">🗓 월별 운세 (1~12월)</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px">';
+    for(const mo of g.months){
+      const mtxt = (typeof mo==='string') ? mo : (
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">'
+        +'<b style="color:'+col+'">'+mo.m+'월</b>'
+        +'<span style="background:'+col+';color:#fff;border-radius:999px;padding:1px 8px;font-size:.72rem">'+mo.label+'</span></div>'
+        +'<div style="font-size:.92rem;line-height:1.7">'+mo.text+'</div>');
+      html+='<div style="background:#faf6ec;border:1px solid var(--line);border-radius:8px;padding:9px 11px">'+mtxt+'</div>';
+    }
     html+='</div></div>';
     out.innerHTML=html;
   }
