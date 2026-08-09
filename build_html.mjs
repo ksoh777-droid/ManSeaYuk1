@@ -7,6 +7,14 @@ const h2c = readFileSync('node_modules/html2canvas/dist/html2canvas.min.js', 'ut
 
 let out = tpl.replace('/*__WEB_DATA__*/ null /*__END__*/', data);
 if (out === tpl) { console.error('❌ 주입 실패: WEB_DATA 플레이스홀더 없음'); process.exit(1); }
+
+// 토정비결 해석 데이터 주입 (있으면)
+try {
+  const tj = readFileSync('tojeong_data.json', 'utf8');
+  const b = out;
+  out = out.replace('/*__TOJEONG_DATA__*/ null /*__END_TOJEONG__*/', () => tj);
+  if (out === b) console.error('⚠ 토정비결 플레이스홀더 없음(건너뜀)');
+} catch { console.error('⚠ tojeong_data.json 없음(토정비결 데이터 미주입)'); }
 const before = out;
 out = out.replace('/*__HTML2CANVAS__*/', () => h2c);
 if (out === before) { console.error('❌ 주입 실패: HTML2CANVAS 플레이스홀더 없음'); process.exit(1); }
