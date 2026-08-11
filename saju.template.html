@@ -1980,14 +1980,19 @@ window.__cloud={
     const r=tojeongKey(dateStr,targetY);
     const g=TOJEONG.gwae[r.key];
     if(!g){out.innerHTML='<div class="note">해당 괘를 찾지 못했습니다. ('+r.key+')</div>';return;}
-    const col=gradeColor[g.grade]||'#2b2420';
+    const col='#'+(g.color||'8a6d1c');
     const aspect=(icon,name,txt)=> txt?('<div style="background:#fffdf8;border:1px solid var(--line);border-left:4px solid '+col+';border-radius:8px;padding:8px 11px">'
       +'<div style="font-weight:700;color:'+col+';font-size:.85rem;margin-bottom:2px">'+icon+' '+name+'</div>'
       +'<div style="font-size:.92rem;line-height:1.7">'+txt+'</div></div>'):'';
     let html='<div class="card" style="margin-top:12px">'
-      +'<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px">'
-      +'<span style="font-size:1.35rem;font-weight:800;color:'+col+'">'+targetY+'년 · '+g.grade+'</span>'
+      +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">'
+      +'<span style="font-size:1.35rem;font-weight:800;color:'+col+'">'+targetY+'년 운세</span>'
+      +'<span style="background:'+col+';color:#fff;border-radius:999px;padding:2px 12px;font-weight:700;font-size:.85rem">'+(g.typeLabel||'')+'</span>'
       +'<span class="note" style="margin:0">괘 '+r.sang+'-'+r.jung+'-'+r.ha+' · 세는나이 '+r.age+'세 · 음력 '+r.lunar.month+'월 '+r.lunar.day+'일'+(r.lunar.leap?'(윤달)':'')+'</span></div>'
+      // 고전 괘상(원문) 병기
+      +'<div style="background:#fbf7ee;border:1px solid var(--line);border-left:4px solid '+col+';border-radius:8px;padding:9px 12px;margin-bottom:10px">'
+      +'<div style="font-size:1.18rem;font-weight:700;letter-spacing:.04em">'+(g.hanja||'')+'</div>'
+      +'<div class="note" style="margin:2px 0 0">'+(g.hangul||'')+' · 고전 괘상(원문)</div></div>'
       +'<div style="font-weight:700;color:'+col+';margin-bottom:6px;font-size:1.05rem">'+g.summary+'</div>'
       // 년중 총운
       +'<div style="font-weight:700;color:var(--accent);margin:10px 0 4px">📜 년중 총운</div>'
