@@ -1994,6 +1994,9 @@ window.__cloud={
       +'<div style="font-size:1.18rem;font-weight:700;letter-spacing:.04em">'+(g.hanja||'')+'</div>'
       +'<div class="note" style="margin:2px 0 0">'+(g.hangul||'')+' · 고전 괘상(원문)</div></div>'
       +'<div style="font-weight:700;color:'+col+';margin-bottom:6px;font-size:1.05rem">'+g.summary+'</div>'
+      // 키워드 칩
+      +((g.keywords&&g.keywords.length)?('<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">'
+        +g.keywords.map(function(kw){return '<span style="border:1px solid '+col+';color:'+col+';border-radius:999px;padding:2px 10px;font-size:.8rem">#'+kw+'</span>';}).join('')+'</div>'):'')
       // 년중 총운
       +'<div style="font-weight:700;color:var(--accent);margin:10px 0 4px">📜 년중 총운</div>'
       +'<div style="line-height:1.95;margin-bottom:12px">'+g.chong+'</div>'
@@ -2002,6 +2005,7 @@ window.__cloud={
       +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin-bottom:12px">'
       + aspect('💰','재물운', g.jaemul) + aspect('🩺','건강운', g.geongang)
       + aspect('💗','애정·가정운', g.aejeong) + aspect('💼','직업·사업운', g.jikeop)
+      + aspect('📚','학업·시험운', g.hakeop) + aspect('🧭','이동·여행운', g.idong)
       +'</div>';
     if(g.advice) html+='<div style="background:#f3ece0;border-radius:8px;padding:9px 12px;margin-bottom:12px;line-height:1.8"><b style="color:'+col+'">한 해 조언</b> · '+g.advice+'</div>';
     // 월별 상세
