@@ -3,14 +3,31 @@
 // 유형(길흉)으로 각 괘의 성향을 정하고, 확장된 창작 문장 뱅크에서 괘 번호로 결정적으로 조합.
 import { writeFileSync } from 'node:fs';
 
+// ── 한자→한글 음독 리딩맵 (원문 괘상에서 한글 음독 자동 도출) ──
+const HANJA_PAIRS = '一일 上상 不불 世세 中중 主주 之지 亂란 事사 亨형 人인 仁인 他타 來래 依의 信신 假가 傷상 先선 光광 入입 內내 兩양 其기 凶흉 出출 初초 別별 利리 則즉 前전 力력 功공 助조 動동 化화 卦괘 危위 去거 取취 合합 吉길 君군 和화 咎구 善선 單단 嚬빈 困곤 圓원 在재 地지 外외 多다 大대 天천 失실 奔분 好호 如여 妄망 威위 子자 孤고 安안 完완 宥유 害해 家가 實실 小소 少소 就취 尾미 平평 形형 往왕 待대 後후 得득 德덕 心심 必필 志지 忙망 急급 惡악 意의 愼신 憂우 成성 所소 損손 救구 散산 新신 明명 時시 更갱 有유 木목 未미 柔유 榮영 權권 欲욕 正정 段단 水수 求구 決결 注주 滿만 災재 無무 熹희 爲위 猶유 獨독 生생 用용 當당 疎소 發발 益익 盜도 相상 眞진 知지 碍애 禍화 福복 終종 結결 而이 能능 舊구 花화 若약 苦고 草초 華화 蕪무 薏의 處처 虛허 虧휴 行행 親친 謀모 謹근 識식 變변 象상 貴귀 走주 足족 身신 退퇴 通통 速속 逢봉 進진 逸일 達달 適적 避피 開개 降강 陰음 陽양 隨수 險험 雖수 離리 難난 雨우 雲운 靜정 革혁 順순 頭두 驚경 髓수 高고 位위 祥상';
+const RD = {}; for (const p of HANJA_PAIRS.split(/\s+/)) RD[p[0]] = p.slice(1);
+function reading(h) {
+  let out = '';
+  for (let i = 0; i < h.length; i++) {
+    const c = h[i]; let r = RD[c] || c;
+    if (c === '不') { // 부/불: 다음 글자 초성이 ㄷ·ㅈ이면 '부'
+      const nr = RD[h[i + 1]] || '';
+      const lead = nr ? Math.floor((nr.charCodeAt(0) - 0xAC00) / 588) : -1;
+      r = (lead === 3 || lead === 4 || lead === 12 || lead === 13) ? '부' : '불';
+    } else if (c === '利' && h[i + 1] === '益') r = '이'; // 두음법칙: 利益=이익
+    out += r;
+  }
+  return out;
+}
+
 const RAW = `
 111 유변화지의 有變化之薏 행운의괘
 112 선만후휴지의 先滿後虧之意 주의가필요한괘
 113 천지광명지의 天地光明之意 행운의괘
 121 천강우수평안지의 天降雨水平安之意 행운의괘
-122 불성사지의 有生生之意 행운의괘
+122 불성사지의 不成事之意 행운의괘
 123 외친내소지의 外親內疎之意 주의가필요한괘
-131 유위고독지의 外親內疎之意 주의가필요한괘
+131 유위고독지의 有危孤獨之意 주의가필요한괘
 132 유생생지의 有生生之意 행운의괘
 133 유친상별지의 有親相別之意 주의가필요한괘
 141 유재불형통지의 有災不亨通之意 주의가필요한괘
@@ -101,7 +118,7 @@ const RAW = `
 622 유험고독지의 有險孤獨之意 행운의괘
 623 대시유길지의 待時有吉之意 행운의괘
 631 갱유호시지의 更有好時之意 조건부행운의괘
-632 유길유상지의 有不安靜之意 주의가필요한괘
+632 유길유상지의 有吉有祥之意 행운의괘
 633 부정지사필상기심 不正之事必傷其心 금지/금기의괘
 641 유덕유신종득길리 有德有信終得吉利 조건부행운의괘
 642 구지부득지의 求之不得之意 주의가필요한괘
@@ -302,6 +319,21 @@ const M_LABEL = {
   '금기': ['금기','자중','보류','방어','침착','근신','수비','인내'],
 };
 
+const SEASON = {
+  1: ['겨울의 끝자락에서 한 해의 씨앗을 품기 좋은 때입니다.','묵은 것을 보내고 새 계획을 세우기 좋습니다.'],
+  2: ['언 땅이 풀리듯 막혔던 기운도 서서히 누그러집니다.','찬 기운이 가시며 움트는 기운이 감돕니다.'],
+  3: ['봄꽃이 피어나듯 새로운 시작에 어울리는 달입니다.','만물이 깨어나니 마음도 활기를 띱니다.'],
+  4: ['신록이 짙어 가듯 하던 일에 생기가 더해집니다.','볕이 따스해 움직임이 늘어나는 때입니다.'],
+  5: ['녹음이 우거지는 때라 만남과 활동이 많아집니다.','기운이 무르익어 부지런함이 빛을 봅니다.'],
+  6: ['장맛비처럼 변덕스러운 흐름이니 중심을 지키십시오.','무더위가 시작되니 몸과 마음을 아끼십시오.'],
+  7: ['한여름의 기세처럼 힘을 쏟되 지나침은 삼가십시오.','더위 속에서도 결실을 준비하기 좋은 때입니다.'],
+  8: ['곡식이 여물어 가듯 거둘 것을 준비하기 좋습니다.','늦더위가 가시며 결실의 기운이 다가옵니다.'],
+  9: ['가을걷이의 계절처럼 거둘 것을 챙기기 좋습니다.','서늘한 바람에 마음이 차분해지는 달입니다.'],
+  10: ['단풍이 물들듯 한 해의 성과를 갈무리할 때입니다.','거둔 것을 정리하며 다음을 준비하기 좋습니다.'],
+  11: ['초겨울의 갈무리처럼 안으로 여미는 것이 이롭습니다.','찬 기운이 드니 몸을 따뜻이 지키십시오.'],
+  12: ['한 해를 마무리하며 다음을 준비하기 좋은 달입니다.','묵은 일을 매듭짓고 마음을 정돈할 때입니다.'],
+};
+
 const pick = (pool, n) => pool[((n % pool.length) + pool.length) % pool.length];
 function pick3(pool, seed) {
   const a = pick(pool, seed), b = pick(pool, seed * 7 + 3), c = pick(pool, seed * 13 + 5);
@@ -321,10 +353,11 @@ for (let s = 1; s <= 8; s++) for (let j = 1; j <= 6; j++) for (let h = 1; h <= 3
   const seed = s * 100 + j * 10 + h;
   const chong = pick(INTRO, seed) + ' ' + pick(FLOW[t], seed * 3 + 7) + ' ' + pick(DEPTH[t], seed * 5 + 1) + ' ' + pick(ADVICE[t], seed * 7 + 2);
   const months = [];
-  for (let m = 1; m <= 12; m++) months.push({ m, label: pick(M_LABEL[t], seed + m * 5), text: pick(M_SIT[t], seed * 7 + m * 13) + ' ' + pick(M_ADV[t], seed * 11 + m * 17) });
+  for (let m = 1; m <= 12; m++) months.push({ m, label: pick(M_LABEL[t], seed + m * 5),
+    text: pick(M_SIT[t], seed * 7 + m * 13) + ' ' + pick(SEASON[m], seed + m) + ' ' + pick(M_ADV[t], seed * 11 + m * 17) });
   data[key] = {
     sang: s, jung: j, ha: h, type: t, typeLabel: TYPE_META[t].label, color: TYPE_META[t].color,
-    hanja: src.hanja, hangul: src.hangul, summary: pick(SUMMARY[t], seed),
+    hanja: src.hanja, hangul: reading(src.hanja), summary: pick(SUMMARY[t], seed),
     keywords: pick3(KEYWORDS[t], seed),
     chong,
     jaemul: pick(ASPECT.jaemul[t], seed * 3 + 1), geongang: pick(ASPECT.geongang[t], seed * 5 + 2),
@@ -340,7 +373,7 @@ const out = {
     title: '토정비결 (고전 괘상 병기 · 해석 자체 창작 확장본)',
     notice: '각 괘의 한자 괘상은 고전 토정비결 원문(퍼블릭 도메인)이며, 유형(길흉 분류)에 맞춰 해석 문장을 새로 창작했습니다. 특정 서적·블로그의 현대 해석을 복제하지 않았습니다. 오락·참고용.',
     disclaimer: '오락·참고용이며 어떠한 결정도 본인 책임입니다.',
-    count: Object.keys(data).length, schema: 'v4-expanded',
+    count: Object.keys(data).length, schema: 'v5-reading-season',
   },
   gwae: data,
 };
