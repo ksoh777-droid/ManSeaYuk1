@@ -260,6 +260,27 @@
     </details>
   </div>
 
+  <!-- ── 사주 기반 투자 택일 (참고용 · 오락) ── -->
+  <div class="card no-print">
+    <details id="investTool">
+      <summary class="detail-sum">📈 사주 기반 투자 택일 (참고용) ▾</summary>
+      <div style="margin-top:12px">
+        <div class="form">
+          <div class="field"><label>기간</label>
+            <select id="investRange">
+              <option value="30">앞으로 30일</option>
+              <option value="60">앞으로 60일</option>
+              <option value="90" selected>앞으로 90일</option>
+            </select></div>
+          <button class="go" id="btnInvest">택일 보기</button>
+          <span class="note" style="align-self:center;margin:0">위 <b>생년월일·시각</b> 입력을 사용합니다.</span>
+        </div>
+        <div id="investOut"></div>
+        <div class="note" style="color:var(--accent)">※ <b>오락·참고용</b>입니다. 명리학의 일간·십성·용신·충을 날짜(일진)에 대입한 <b>은유적 계산</b>일 뿐, <b>실제 시장 분석이나 투자 자문이 아닙니다.</b> 매수·매도 판단과 손익의 책임은 전적으로 본인에게 있습니다.</div>
+      </div>
+    </details>
+  </div>
+
   <!-- ── 만세력 달력 · 간지 찾기 도구 ── -->
   <div class="card no-print">
     <details id="calTool">
@@ -1558,14 +1579,19 @@ function fillIljin(y,m){
     if(col===7){html+='</tr><tr>';col=0;}
     const jdn=firstJdn+(d-1), pid=((jdn+off)%60+60)%60, ge=EL_NAME[GAN_EL[pid%10]];
     const star=(isTM&&d===today);
+    const it=investTag(pid, ds, CTX.dayBranch, CTX.yongEls);
+    const mk=it.tag?INVEST_MARK[it.tag]:null;
     html+='<td class="ijcell bg-'+ge+(star?' today':'')+'" data-pid="'+pid+'" data-y="'+y+'" data-m="'+m+'" data-d="'+d+'">'
       +'<div class="dnum">'+d+(star?' ★':'')+'</div>'
       +'<div class="ijg el-'+ge+'">'+hanjaPillar(pid)+'</div>'
-      +'<div style="font-size:.62rem;color:var(--sub)">'+tenGod(ds,pid%10)+'</div></td>';
+      +'<div style="font-size:.62rem;color:var(--sub)">'+tenGod(ds,pid%10)+'</div>'
+      +(mk?'<div style="font-size:.6rem;font-weight:700;color:'+mk.color+'">'+mk.icon+mk.label+'</div>':'')
+      +'</td>';
     col++;
   }
   while(col>0&&col<7){html+='<td class="empty"></td>';col++;}
   html+='</tr></table>';
+  html+='<div class="note" style="margin-top:6px">📈 <b>투자 택일(참고용)</b> — 🟢매수(진입) · 🟡매도(실현) · 🔴주의(관망). 명리 은유 기반이며 실제 투자 자문이 아닙니다.</div>';
   document.getElementById('iljinBody').innerHTML=html;
 }
 function wireYunControls(){
@@ -2024,6 +2050,110 @@ window.__cloud={
   }
   document.getElementById('btnTojeong').addEventListener('click',renderTojeong);
 })();
+
+// ══════════════════════════════════════════
+//  사주 기반 투자 택일 (참고용 · 오락)
+//  그 날의 일진(간지)을 내 일간에 대입 → 십성/용신/충으로 매수·매도·주의일 산출
+// ══════════════════════════════════════════
+function birthCtx(){
+  const dateStr=document.getElementById('date').value;
+  const timeStr=document.getElementById('time').value||'00:00';
+  const noTime=document.getElementById('noTime').checked;
+  const yaja=document.getElementById('yajaMode').value==='yaja';
+  if(!dateStr||dateStr<WEB_DATA.minDate||dateStr>WEB_DATA.maxDate) return null;
+  const [Y,Mo,Da]=dateStr.split('-').map(Number);
+  const [h,mi]=timeStr.split(':').map(Number);
+  const jdn=toJDN(Y,Mo,Da);
+  const corr=timeCorrection(dateStr);
+  let effJdn=jdn, effDateStr=dateStr, effMin=h*60+mi;
+  if(!noTime){
+    const rawMin=Math.round(h*60+mi+corr.corrMin);
+    const dayShift=yaja?Math.floor(rawMin/1440):Math.floor((rawMin+60)/1440);
+    effMin=((rawMin%1440)+1440)%1440; effJdn=jdn+dayShift;
+    const eg=fromJDN(effJdn); effDateStr=dateStrOf(eg.year,eg.month,eg.day);
+  }
+  const dayIdB=((effJdn+WEB_DATA.dayPillarOffset)%60+60)%60;
+  const yearId=lookupChange(WEB_DATA.yearChanges,effDateStr);
+  const monId=lookupChange(WEB_DATA.monthChanges,effDateStr);
+  const dayStem=dayIdB%10, dayJi=dayIdB%12;
+  const hb=noTime?null:Math.floor((effMin+60)/120)%12;
+  const hourId=noTime?null:hourPillarFromBranch(dayStem,hb);
+  const P={일:fmt(dayIdB),월:fmt(monId),년:fmt(yearId)};
+  if(hourId!=null)P['시']=fmt(hourId);
+  const {sinType,cat}=sinStrength(P,dayStem);
+  const dec=yongsinDecision(cat,sinType);
+  const dEl=GAN_EL[dayStem];
+  const E={비겁:dEl,인성:(dEl+4)%5,식상:(dEl+1)%5,재성:(dEl+2)%5,관성:(dEl+3)%5};
+  const yongEls=new Set();
+  if(dec.yong!=='중화'){ if(E[dec.yong]!=null)yongEls.add(E[dec.yong]); if(E[dec.hui]!=null)yongEls.add(E[dec.hui]); }
+  return {dayStem, dayJi, dEl, yong:dec.yong, yongEls};
+}
+// 공유 스코어링: 그 날(pid=일진 60갑자) → 매수/매도/주의 태그 (카드·일진달력 공용)
+function investTag(pid, refStem, refBranch, yongElSet){
+  const dEl=GAN_EL[refStem];
+  const dGan=pid%10, dJi=pid%12;
+  const dGanEl=GAN_EL[dGan], dJiEl=GAN_EL[JI_MAIN_GAN[dJi]];
+  const rG=(dGanEl-dEl+5)%5, rJ=(dJiEl-dEl+5)%5;   // 0비겁 1식상 2재성 3관성 4인성
+  let buy=0,sell=0,warn=0;
+  for(const r of [rG,rJ]){
+    if(r===1){buy+=2;sell+=1;}
+    else if(r===2){buy+=1.5;sell+=2;}
+    else if(r===3){buy+=0.5;sell+=0.5;}
+    else if(r===4){buy+=0.3;sell+=0.2;}
+    else {buy-=1.5;sell-=1.5;warn++;}
+  }
+  if(yongElSet){ if(yongElSet.has(dGanEl)){buy+=1.2;sell+=1.2;} if(yongElSet.has(dJiEl)){buy+=1.2;sell+=1.2;} }
+  let chung=false;
+  if((dJi+6)%12===refBranch){ buy-=3;sell-=3;chung=true; }
+  const reasons=[];
+  if(rG===2||rJ===2) reasons.push('재성');
+  if(rG===1||rJ===1) reasons.push('식상(생재)');
+  if(rG===0||rJ===0) reasons.push('비겁·겁재');
+  if(yongElSet&&(yongElSet.has(dGanEl)||yongElSet.has(dJiEl))) reasons.push('용신 부합');
+  if(chung) reasons.push('일지충(변동)');
+  let tag=null;
+  if(chung || (warn>=1 && Math.max(buy,sell)<1.5)) tag='warn';
+  else if(buy>=3.2 && buy>=sell) tag='buy';
+  else if(sell>=3.0) tag='sell';
+  return {tag, buy, sell, reason:reasons.join('·')||'평이'};
+}
+const INVEST_MARK={buy:{icon:'🟢',label:'매수',color:'#1a7a3a'},sell:{icon:'🟡',label:'매도',color:'#b06a1c'},warn:{icon:'🔴',label:'주의',color:'#8a1c1c'}};
+function renderInvest(){
+  const out=document.getElementById('investOut');
+  const ctx=birthCtx();
+  if(!ctx){ out.innerHTML='<div class="note" style="color:var(--accent)">생년월일을 먼저 입력하세요(지원 1900~2050).</div>'; return; }
+  const N=+document.getElementById('investRange').value;
+  const pad=n=>String(n).padStart(2,'0');
+  const DOW=['일','월','화','수','목','금','토'];
+  const buyList=[], sellList=[], warnList=[];
+  const start=new Date();
+  for(let i=0;i<N;i++){
+    const d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
+    const Y=d.getFullYear(),Mo=d.getMonth()+1,Da=d.getDate();
+    const ds=Y+'-'+pad(Mo)+'-'+pad(Da);
+    if(ds<WEB_DATA.minDate||ds>WEB_DATA.maxDate) continue;
+    const jdn=toJDN(Y,Mo,Da);
+    const dayId=((jdn+WEB_DATA.dayPillarOffset)%60+60)%60;
+    const it=investTag(dayId, ctx.dayStem, ctx.dayJi, ctx.yongEls);
+    if(!it.tag) continue;
+    const item={ds,dow:DOW[d.getDay()],gz:GAN[dayId%10]+JI[dayId%12],reason:it.reason};
+    if(it.tag==='warn') warnList.push(item);
+    else if(it.tag==='buy') buyList.push(item);
+    else sellList.push(item);
+  }
+  const sec=(title,color,list,empty)=> '<div style="margin:12px 0 4px;font-weight:700;color:'+color+'">'+title+' <span class="note" style="margin:0">('+list.length+'일)</span></div>'
+    + (list.length? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px">'
+      + list.map(x=>'<div style="border:1px solid var(--line);border-left:4px solid '+color+';border-radius:8px;padding:6px 9px;font-size:.9rem"><b>'+x.ds+'</b> ('+x.dow+') · '+x.gz+'<div class="note" style="margin:0">'+x.reason+'</div></div>').join('')
+      + '</div>' : '<div class="note" style="margin:0">'+empty+'</div>');
+  let html='<div class="card" style="margin-top:12px">'
+    +'<div class="note" style="margin:0 0 6px">기준 · 일간 <b>'+GAN[ctx.dayStem]+'('+EL_NAME[ctx.dEl]+')</b> · 용신 <b>'+ctx.yong+([...ctx.yongEls].length?'('+[...ctx.yongEls].map(e=>EL_NAME[e]).join('·')+')':'')+'</b>  |  재성일=재물, 식상일=생재(진입), 겁재·일지충=변동·주의</div>'
+    +sec('🟢 매수(진입) 유리한 날','#1a7a3a',buyList,'이 기간에는 뚜렷한 날이 없습니다.')
+    +sec('🟡 매도(실현) 유리한 날','#b06a1c',sellList,'이 기간에는 뚜렷한 날이 없습니다.')
+    +sec('🔴 주의(관망) 권장일','#8a1c1c',warnList,'이 기간에는 특이일이 없습니다.')
+    +'</div>';
+  out.innerHTML=html;
+}
+document.getElementById('btnInvest').addEventListener('click',renderInvest);
 
 refreshProfileList();
 
