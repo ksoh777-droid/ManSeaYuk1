@@ -704,6 +704,14 @@ function lookupLunar(dateStr){
   const day=(toJDN(d,e,f)-toJDN(a,b,c))+1;
   return {year:ly,month:lm,day,leap:!!leap};
 }
+// 해당 날짜가 속한 음력 달의 날수(대소월: 29 또는 30) — 토정비결 중괘용
+function lunarMonthDays(dateStr){
+  const LM=WEB_DATA.lunarMonths;let lo=0,hi=LM.length-1,idx=0;
+  while(lo<=hi){const mid=(lo+hi)>>1;if(LM[mid][0]<=dateStr){idx=mid;lo=mid+1;}else hi=mid-1;}
+  if(!LM[idx+1]) return 30; // 데이터 끝 예외
+  const c=LM[idx][0].split('-').map(Number), n=LM[idx+1][0].split('-').map(Number);
+  return toJDN(n[0],n[1],n[2]) - toJDN(c[0],c[1],c[2]);   // 29 또는 30
+}
 
 // 십성: 일간(stemIdx) 기준 대상 천간(tIdx)의 십성
 function tenGod(dayStem,tStem){
@@ -2003,18 +2011,24 @@ window.__cloud={
   const NOW_Y=2026;
   for(let y=NOW_Y+3;y>=NOW_Y-6;y--){const o=document.createElement('option');o.value=y;o.textContent=y+'년';if(y===NOW_Y)o.selected=true;yearSel.appendChild(o);}
   const gradeColor={'대길':'#1a7a3a','길':'#2e7d4f','평':'#8a6d1c','기복':'#b06a1c','주의':'#8a1c1c'};
+  // 전통 조견표(간지 index 0~59 → 수): 값이 오면 60개 배열로 교체. null이면 60갑자 순번(index+1) 사용(자체 규칙).
+  const TJ_TAESE=null, TJ_WOLGEON=null, TJ_ILJIN=null;
   function tojeongKey(dateStr,targetY){
     const [Y]=dateStr.split('-').map(Number);
     const jdn=toJDN(...dateStr.split('-').map(Number));
     const dayId=((jdn+WEB_DATA.dayPillarOffset)%60+60)%60;              // 일진(생일 간지)
     const monId=lookupChange(WEB_DATA.monthChanges,dateStr);            // 월건(생월 간지)
     const L=lookupLunar(dateStr);                                       // 음력 생월/생일
+    const monDays=lunarMonthDays(dateStr);                             // 음력 생월의 날수(29/30) — 중괘용
     const taeSe=lookupChange(WEB_DATA.yearChanges,targetY+'-06-01');    // 그 해 세차
     const age=targetY-Y+1;                                              // 세는나이
-    const sang=((age+(taeSe+1))%8)||8;
-    const jung=((L.month+(monId+1))%6)||6;
-    const ha=((L.day+(dayId+1))%3)||3;
-    return {key:''+sang+jung+ha,sang,jung,ha,age,lunar:L};
+    const taeSu=TJ_TAESE?TJ_TAESE[taeSe]:taeSe+1;                       // 태세수
+    const wolSu=TJ_WOLGEON?TJ_WOLGEON[monId]:monId+1;                   // 월건수
+    const ilSu =TJ_ILJIN?TJ_ILJIN[dayId]:dayId+1;                       // 일진수
+    const sang=((age+taeSu)%8)||8;                                      // (나이+태세수)%8
+    const jung=((monDays+wolSu)%6)||6;                                  // (생월 날수+월건수)%6
+    const ha=((L.day+ilSu)%3)||3;                                       // (생일+일진수)%3
+    return {key:''+sang+jung+ha,sang,jung,ha,age,lunar:L,monDays};
   }
   function renderTojeong(){
     const dateStr=document.getElementById('date').value;
