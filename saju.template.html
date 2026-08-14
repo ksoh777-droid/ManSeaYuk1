@@ -1580,18 +1580,19 @@ function fillIljin(y,m){
     const jdn=firstJdn+(d-1), pid=((jdn+off)%60+60)%60, ge=EL_NAME[GAN_EL[pid%10]];
     const star=(isTM&&d===today);
     const it=investTag(pid, ds, CTX.dayBranch, CTX.yongEls);
-    const mk=it.tag?INVEST_MARK[it.tag]:null;
+    let mk=it.tag?INVEST_MARK[it.tag]:null;
+    if(mk && col>=5) mk=null;  // 토(5)·일(6)은 거래일 아님 → 마커 미표시
     html+='<td class="ijcell bg-'+ge+(star?' today':'')+'" data-pid="'+pid+'" data-y="'+y+'" data-m="'+m+'" data-d="'+d+'">'
       +'<div class="dnum">'+d+(star?' ★':'')+'</div>'
       +'<div class="ijg el-'+ge+'">'+hanjaPillar(pid)+'</div>'
       +'<div style="font-size:.62rem;color:var(--sub)">'+tenGod(ds,pid%10)+'</div>'
-      +(mk?'<div style="font-size:.6rem;font-weight:700;color:'+mk.color+'">'+mk.icon+mk.label+'</div>':'')
+      +(mk?'<div style="font-size:.6rem;font-weight:700;color:'+mk.color+'">'+mk.icon.repeat(it.strength)+mk.label+'</div>':'')
       +'</td>';
     col++;
   }
   while(col>0&&col<7){html+='<td class="empty"></td>';col++;}
   html+='</tr></table>';
-  html+='<div class="note" style="margin-top:6px">📈 <b>투자 택일(참고용)</b> — 🟢매수(진입) · 🟡매도(실현) · 🔴주의(관망). 명리 은유 기반이며 실제 투자 자문이 아닙니다.</div>';
+  html+='<div class="note" style="margin-top:6px">📈 <b>투자 택일(참고용)</b> — 🟢매수(진입) · 🟡매도(실현) · 🔴주의(관망) · <b>마크 2개=강, 1개=보통</b>. 토·일은 거래일이 아니라 마커를 표시하지 않습니다. 명리 은유 기반이며 실제 투자 자문이 아닙니다.</div>';
   document.getElementById('iljinBody').innerHTML=html;
 }
 function wireYunControls(){
@@ -2111,11 +2112,11 @@ function investTag(pid, refStem, refBranch, yongElSet){
   if(rG===0||rJ===0) reasons.push('비겁·겁재');
   if(yongElSet&&(yongElSet.has(dGanEl)||yongElSet.has(dJiEl))) reasons.push('용신 부합');
   if(chung) reasons.push('일지충(변동)');
-  let tag=null;
-  if(chung || (warn>=1 && Math.max(buy,sell)<1.5)) tag='warn';
-  else if(buy>=3.2 && buy>=sell) tag='buy';
-  else if(sell>=3.0) tag='sell';
-  return {tag, buy, sell, reason:reasons.join('·')||'평이'};
+  let tag=null, strength=1;   // 강도: 2=강(마크 2개), 1=보통(마크 1개)
+  if(chung || (warn>=1 && Math.max(buy,sell)<1.5)){ tag='warn'; strength=chung?2:1; }
+  else if(buy>=3.2 && buy>=sell){ tag='buy'; strength=buy>=4.5?2:1; }
+  else if(sell>=3.0){ tag='sell'; strength=sell>=4.5?2:1; }
+  return {tag, strength, chung, buy, sell, reason:reasons.join('·')||'평이'};
 }
 const INVEST_MARK={buy:{icon:'🟢',label:'매수',color:'#1a7a3a'},sell:{icon:'🟡',label:'매도',color:'#b06a1c'},warn:{icon:'🔴',label:'주의',color:'#8a1c1c'}};
 function renderInvest(){
@@ -2136,14 +2137,15 @@ function renderInvest(){
     const dayId=((jdn+WEB_DATA.dayPillarOffset)%60+60)%60;
     const it=investTag(dayId, ctx.dayStem, ctx.dayJi, ctx.yongEls);
     if(!it.tag) continue;
-    const item={ds,dow:DOW[d.getDay()],gz:GAN[dayId%10]+JI[dayId%12],reason:it.reason};
+    if(d.getDay()===0||d.getDay()===6) continue;   // 토·일은 거래일 아님 → 제외
+    const item={ds,dow:DOW[d.getDay()],gz:GAN[dayId%10]+JI[dayId%12],reason:it.reason,strong:it.strength>=2};
     if(it.tag==='warn') warnList.push(item);
     else if(it.tag==='buy') buyList.push(item);
     else sellList.push(item);
   }
   const sec=(title,color,list,empty)=> '<div style="margin:12px 0 4px;font-weight:700;color:'+color+'">'+title+' <span class="note" style="margin:0">('+list.length+'일)</span></div>'
     + (list.length? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px">'
-      + list.map(x=>'<div style="border:1px solid var(--line);border-left:4px solid '+color+';border-radius:8px;padding:6px 9px;font-size:.9rem"><b>'+x.ds+'</b> ('+x.dow+') · '+x.gz+'<div class="note" style="margin:0">'+x.reason+'</div></div>').join('')
+      + list.map(x=>'<div style="border:1px solid var(--line);border-left:4px solid '+color+';border-radius:8px;padding:6px 9px;font-size:.9rem"><b>'+x.ds+'</b> ('+x.dow+')'+(x.strong?' <b style="color:'+color+'">강</b>':'')+' · '+x.gz+'<div class="note" style="margin:0">'+x.reason+'</div></div>').join('')
       + '</div>' : '<div class="note" style="margin:0">'+empty+'</div>');
   let html='<div class="card" style="margin-top:12px">'
     +'<div class="note" style="margin:0 0 6px">기준 · 일간 <b>'+GAN[ctx.dayStem]+'('+EL_NAME[ctx.dEl]+')</b> · 용신 <b>'+ctx.yong+([...ctx.yongEls].length?'('+[...ctx.yongEls].map(e=>EL_NAME[e]).join('·')+')':'')+'</b>  |  재성일=재물, 식상일=생재(진입), 겁재·일지충=변동·주의</div>'
