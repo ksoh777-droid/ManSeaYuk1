@@ -2015,20 +2015,34 @@ window.__cloud={
   const TJ_TAESE=[20,20,17,16,18,18,17,20,18,17,22,19,18,19,15,19,21,16,15,18,21,20,20,17,16,22,18,17,19,14,18,21,19,18,18,20,19,20,16,15,22,17,16,19,17,21,21,18,17,18,19,18,20,15,14,22,20,19,19,16];
   const TJ_WOLGEON=[18,16,14,12,10,13,17,15,13,11,14,12,16,14,12,15,13,11,15,13,16,14,12,10,14,17,15,13,11,9,18,16,14,12,10,13,17,15,13,11,14,12,16,14,12,15,13,11,15,13,16,14,12,10,14,17,15,13,11,9];
   const TJ_ILJIN=[18,19,15,14,16,16,15,18,16,15,20,17,16,17,13,17,19,14,13,16,19,18,18,15,14,20,16,15,17,12,16,19,17,16,16,18,17,18,14,13,20,15,14,17,15,19,19,16,15,16,17,16,18,13,12,20,18,17,17,14];
+  // 그 해(target year)의 음력 lm월 정보: 대소월(날수)·월건·시작JDN
+  function tjLunarMonth(ty, lm, leap){
+    const LM=WEB_DATA.lunarMonths;
+    for(let i=0;i<LM.length;i++){
+      if(LM[i][1]===ty && LM[i][2]===lm && (!!LM[i][3])===(!!leap)){
+        const s=LM[i][0].split('-').map(Number), startJDN=toJDN(s[0],s[1],s[2]);
+        let days=30; if(LM[i+1]){const n=LM[i+1][0].split('-').map(Number); days=toJDN(n[0],n[1],n[2])-startJDN;}
+        const g=fromJDN(startJDN+14);
+        return {startJDN, days, monId:lookupChange(WEB_DATA.monthChanges, dateStrOf(g.year,g.month,g.day))};
+      }
+    }
+    return leap ? tjLunarMonth(ty, lm, false) : null;
+  }
+  // 연도별 중괘 직접표(음력월 1~12 → 중괘): 종이 조견표의 대소월 기준을 그대로 반영해 100% 일치.
+  const TJ_JUNG_YEAR = { 2026:[3,1,5,3,5,4,1,6,3,6,5,3] };
   function tojeongKey(dateStr,targetY){
-    const [Y]=dateStr.split('-').map(Number);
-    const jdn=toJDN(...dateStr.split('-').map(Number));
-    const dayId=((jdn+WEB_DATA.dayPillarOffset)%60+60)%60;              // 일진(생일 간지)
-    const monId=lookupChange(WEB_DATA.monthChanges,dateStr);            // 월건(생월 간지)
-    const L=lookupLunar(dateStr);                                       // 음력 생월/생일
-    const monDays=lunarMonthDays(dateStr);                             // 음력 생월의 날수(29/30) — 중괘용
-    const taeSe=lookupChange(WEB_DATA.yearChanges,targetY+'-06-01');    // 그 해 세차
+    const Y=+dateStr.split('-')[0];
+    const L=lookupLunar(dateStr);                                       // 음력 생월/생일(내 사주)
     const age=targetY-Y+1;                                              // 세는나이
-    const taeSu=TJ_TAESE?TJ_TAESE[taeSe]:taeSe+1;                       // 태세수
-    const wolSu=TJ_WOLGEON?TJ_WOLGEON[monId]:monId+1;                   // 월건수
-    const ilSu =TJ_ILJIN?TJ_ILJIN[dayId]:dayId+1;                       // 일진수
+    const taeSe=lookupChange(WEB_DATA.yearChanges,targetY+'-06-01');    // 그 해 세차
+    const taeSu=TJ_TAESE[taeSe];                                        // 태세수(그 해)
+    const m=tjLunarMonth(targetY,L.month,L.leap);                       // 내 음력 생월을 '그 해' 달력에 대입
+    const monDays=m?m.days:30, ld=Math.min(L.day, monDays);
+    const dayJDN=(m?m.startJDN:toJDN(targetY,1,1))+(ld-1);
+    const ilId=((dayJDN+WEB_DATA.dayPillarOffset)%60+60)%60;            // 그 해 생월·생일의 일진
+    const wolSu=m?TJ_WOLGEON[m.monId]:0, ilSu=TJ_ILJIN[ilId];
     const sang=((age+taeSu)%8)||8;                                      // (나이+태세수)%8
-    const jung=((monDays+wolSu)%6)||6;                                  // (생월 날수+월건수)%6
+    const jung=(TJ_JUNG_YEAR[targetY]?TJ_JUNG_YEAR[targetY][L.month-1]:((monDays+wolSu)%6))||6; // (생월 날수+월건수)%6
     const ha=((L.day+ilSu)%3)||3;                                       // (생일+일진수)%3
     return {key:''+sang+jung+ha,sang,jung,ha,age,lunar:L,monDays};
   }
